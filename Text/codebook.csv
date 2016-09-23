@@ -1,0 +1,150 @@
+Section,Variable Name,Indicator,Full Source,Years Available,Normalization Source
+Socioeconomic/Demographics,tpopXX,Total Population,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,maleXX,Total Male Population,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,femaleXX,Total Female Population,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,paaXX,Percent of Residents - Black/African-American (Non-Hispanic),U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,pwhiteXX,Percent of Residents - White/Caucasian (Noon-Hispanic),U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,pasiXX,Percent of Residents - Asian (Non-Hispanic),U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,p2moreXX,Percent of Residents - Two or More Races (Non-Hispanic),U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,ppacXX,"Percent of Residents - All Other Races (Hawaiian/ Pacific Islander, Alaskan/ Native American Other Race) (Non-Hispanic)",U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,phispXX,Percent of Residents - Hispanic,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,racdivXX,Racial Diversity Index,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,age5_XX,Percent of Population 0-5 years old,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,age18_XX,Percent of Population 6-18 years old,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,age24_XX,Percent of Population 19-24 years old,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,age64_XX,Percent of Population 25-64 years old,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,age65_XX,Percent of Population 65 years and over,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,hhsXX,Total Number of Households,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,femhhsXX,Percent of Female-Headed Households with Children Under 18,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,famXX,Percent of Households with Children Under 18,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,hhsizeXX,Average Household Size,U.S. Bureau of the Census,2010,
+Socioeconomic/Demographics,mhhiXX,Median Household Income,American Community Survey,2007-2011,
+Socioeconomic/Demographics,hh25incXX,"Percent of Households Earning Less than $25,000",American Community Survey,2007-2011,
+Socioeconomic/Demographics,hh40incXX,"Percent of Households Earning $25,000 to $40,000",American Community Survey,2007-2011,
+Socioeconomic/Demographics,hh60incXX,"Percent of Households Earning $40,000 to $60,000",American Community Survey,2007-2011,
+Socioeconomic/Demographics,hh75incXX,"Percent of Households Earning $60,000 to $75,000",American Community Survey,2007-2011,
+Socioeconomic/Demographics,hhm75XX,"Percent of Households Earning More than $75,000",American Community Survey,2007-2011,
+Socioeconomic/Demographics,hhpovXX,Percent of Households Living Below the Poverty Line,American Community Survey,2007-2011,
+Socioeconomic/Demographics,hhchpovXX,Percent of Children Living Below the Poverty Line,American Community Survey,2007-2011,
+Housing,saleprXX,Median Price of Homes Sold,First American Real Estate Solutions,"2010, 2011",
+Housing,domXX,Median Number of Days on the Market,"RBIntel, Inc.","2010, 2011",
+Housing,shomesXX,Number of Homes Sold,First American Real Estate Solutions,"2010, 2011",
+Housing,ownrocXX,Percentage of Housing Units that are Owner-Occupied,Maryland Property View,"2010, 2011",
+Housing,foreXX,Percentage of Properties Under Mortgage Foreclosure,Baltimore City Circuit Court,"2010, 2011",Maryland Property View
+Housing,vacantXX,Percentage of Residential Properties that are Vacant and Abandoned,Baltimore City Department of Housing,"2010, 2011",Maryland Property View
+Housing,vioXX,Percentage of Residential Properties with Housing Violations (Excluding Vacants),Baltimore City Department of Housing,"2010, 2011",Maryland Property View
+Housing,resrehabXX,"Percentage of Properties with Rehabilitation Permits Exceeding $5,000",Baltimore City Department of Housing,"2010, 2011",Maryland Property View
+Housing,totalresXX,Total Number of Residential Properties,Maryland Property View,"2010, 2011",
+Housing,cashsaXX,Percentage of Residential Sales for Cash,"RBIntel, Inc.","2010, 2011",
+Housing,reosaXX,Percentage of Residential Sales in Foreclosure (REO),"RBIntel, Inc.","2010, 2011",
+Housing,demperXX,"Number of Demolition Permits per 1,000 Residential Properties",Baltimore City Department of Housing,2011,Maryland Property View
+Housing,constperXX,"Number of New Construction Permits per 1,000 Residential Properties",Baltimore City Department of Housing,2011,Maryland Property View
+Housing,baltvacXX,Percentage of Vacant Properties Owned by Baltimore City,Baltimore City Department of Housing,2011,Maryland Property View
+Housing,affordmXX,Affordability Index - Mortgage,American Community Survey,2007-2011,
+Housing,affordrXX,Affordability Index - Rent,American Community Survey,2007-2011,
+Housing,homtaxXX,"Number of Homestead Tax Credits per 1,000 Residential Units",Baltimore City Department of Finance,2011,Maryland Property View
+Housing,owntaxXX,"Number of Homeowner's Tax Credits per 1,000 Residential Units",Baltimore City Department of Finance,2011,Maryland Property View
+Housing,nomailXX,Percent Residential Properties that do Not Receive Mail,"U.S. Postal Service, U.S. Department of Housing and Urban Development","2010, 2011",
+Crime and Safety,crimeXX,"Part 1 Crime Rate per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,violXX,"Violent Crime Rate per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,propXX,"Property Crime Rate per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,domvioXX,"Domestic Violence Calls For Service per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,juvarrXX,"Juvenile Arrest Rate per 1,000 Juveniles",Baltimore City Police Department,2011,U.S. Bureau of the Census
+Crime and Safety,juvviolXX,"Juvenile Arrest Rate for Violent Offenses per 1,000 Juveniles",Baltimore City Police Department,2011,U.S. Bureau of the Census
+Crime and Safety,juvdrugXX,"Juvenile Arrest Rate for Drug-Related Offenses per 1,000 Juveniles",Baltimore City Police Department,2011,U.S. Bureau of the Census
+Crime and Safety,shootXX,"Number of Shootings per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,gunhomXX,"Number of Gun-Related Homicides per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,casltXX,"Number of Common Assault Calls for Service per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,narcXX,"Number of Narcotics Calls for Service per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Crime and Safety,caraccXX,"Number of Automobile Accident Calls for Service per 1,000 Residents",Baltimore City Police Department,"2010, 2011",U.S. Bureau of the Census
+Education,eattendXX,Number of Students Ever Enrolled 1st - 5th Grade,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,mattendXX,Number of Students Ever Enrolled 6th - 8th Grade,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,heattendXX,Number of Students Ever Enrolled 9th - 12th Grade,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,eenrolXX,Number of Students Enrolled in 1st - 5th Grade,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,menrolXX,Number of Students Enrolled in 6th - 8th Grade,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,henrolXX,Number of Students Enrolled in 9th - 12th Grade,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,aastudXX,Percent of Students that are African American,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,wstudXX,Percent of Students that are White (non-Hispanic),Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,hstudXX,Percent of Students that are Hispanic,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,abseXX,Percent of 1st-5th Grade Students that are Chronically Absent (Missing at least 20 days),Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,absmdXX,Percent of 6th-8th Grade Students that are Chronically Absent (Missing at least 20 days),Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,abshsXX,Percent of 9th-12th Grade Students that are Chronically Absent (Missing at least 20 days),Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,suspXX,Percentage of Students Suspended or Expelled During School Year,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,farmsXX,Percentage of Students Receiving Free or Reduced Meals,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,spedXX,Percentage of Students Enrolled in Special Education Programs,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,readyXX,Kindergarten School Readiness,Baltimore City Public Schools,2010-2011,
+Education,3mathXX,Percentage of 3rd Grade Students Passing MSA Math,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,3readXX,Percentage of 3rd Grade Students Passing MSA Reading,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,5mathXX,Percentage of 5th Grade Students Passing MSA Math,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,5readXX,Percentage of 5th Grade Students Passing MSA Reading,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,8mathXX,Percentage of 8th Grade Students Passing MSA Math,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,8readXX,Percentage of 8th Grade Students Passing MSA Reading,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,hsaengXX,Percentage of Students Passing H.S.A. English ,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,hsabioXX,Percentage of Students Passing H.S.A. Biology,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,hsagovXX,Percentage of Students Passing H.S.A. Government,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,hsaalgXX,Percentage of Students Passing H.S.A. Algebra,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,dropXX,High School Dropout/Withdrawl Rate,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,complXX,High School Completion Rate,Baltimore City Public Schools,"2009-2010, 2010-2011",
+Education,sclswXX,Percent of Students Switching Schools within School Year,Baltimore City Public Schools,2010-2011,
+Education,sclempXX,Percentage of Population aged 16-19 in School and/or Employed,American Community Survey,2007-2011,
+Health and Human Welfare,teenbirXX,"Teen Birth Rate per 1,000 Females (aged 15-19)",Maryland Department of Vital Statistics,"2010, 2011",U.S. Bureau of the Census
+Health and Human Welfare,termbirXX,Percent of Births Delivered at Term (37-42 Weeks),Maryland Department of Vital Statistics,"2010, 2011",U.S. Bureau of the Census
+Health and Human Welfare,birthwtXX,Percent of Babies Born with a Satisfactory Birth Weight,Maryland Department of Vital Statistics,"2010, 2011",U.S. Bureau of the Census
+Health and Human Welfare,prenatalXX,Percent of Births Where the Mother Received Early Prenatal Care (First Trimester),Maryland Department of Vital Statistics,"2010, 2011",U.S. Bureau of the Census
+Health and Human Welfare,leadtestXX,Number of Children (aged 0-6) Tested for Elevated Blood Lead Levels,"Maryland Department of the Environment, Lead Poisoning Prevention Program","2010, 2011",
+Health and Human Welfare,ebllXX,Percent of Children (aged 0-6) with Elevated Blood Lead Levels,"Maryland Department of the Environment, Lead Poisoning Prevention Program","2010, 2011",
+Health and Human Welfare,leadvXX,"Percent of Lead Violations per 1,000 Residential Units",Baltimore City Health Department,2011,Maryland Property View
+Health and Human Welfare,tanfXX,Percent of Families Receiving TANF,Maryland Department of Human Resources,2011,U.S. Bureau of the Census
+Health and Human Welfare,liquorXX,"Liquor Outlet density (per 1,000 Residents)",Baltimore City Liquoor Board,"2010, 2011",U.S. Bureau of the Census
+Health and Human Welfare,fastfdXX,"Fast Food Outlet Density (per 1,000 Residents)","Johns Hopkins University, Center for a Livable Future",2011,
+Health and Human Welfare,LifeExpXX,Life Expectancy,Baltimore City Health Department,2011,
+Health and Human Welfare,mort1_XX,Mortality by Age (Less than 1 year old),Baltimore City Health Department,2011,
+Health and Human Welfare,mort14_XX,Mortality by Age (1-14 years old),Baltimore City Health Department,2011,
+Health and Human Welfare,mort24_XX,Mortality by Age (15-24 years old),Baltimore City Health Department,2011,
+Health and Human Welfare,mort44_XX,Mortality by Age (25-44 years old),Baltimore City Health Department,2011,
+Health and Human Welfare,mort64_XX,Mortality by Age (45-64 years old),Baltimore City Health Department,2011,
+Health and Human Welfare,mort84_XX,Mortality by Age (65-84 years old),Baltimore City Health Department,2011,
+Health and Human Welfare,mort85_XX,Mortality by Age (85 and over),Baltimore City Health Department,2011,
+Arts and Culture,libcardXX,"Number of Persons with Library Cards per 1,000 Residents",Enoch Pratt Free Library,2011,U.S. Bureau of the Census
+Arts and Culture,artbusXX,"Number of Businesses that are Arts-Related per 1,000 residents",InfoUSA,"2010, 2011",U.S. Bureau of the Census
+Arts and Culture,artempXX,Total Employment in Arts-Related Businesses,InfoUSA,"2010, 2011",
+Economic and Workforce Development,emplXX,Percent  Population 16-64 Employed,American Community Survey,2007-2011,
+Economic and Workforce Development,unemplXX,Percent  Population 16-64 Unemployed and Looking for Work,American Community Survey,2007-2011,
+Economic and Workforce Development,nilfXX,Percent  Population 16-64 Not in Labor Force,American Community Survey,2007-2011,
+Economic and Workforce Development,unemprXX,Unemployment Rate,American Community Survey,2007-2011,
+Economic and Workforce Development,lesshsXX,Percent  Population (25 years and over) With Less Than a High School Diploma or GED,American Community Survey,2007-2011,
+Economic and Workforce Development,somecolXX,Percent  Population (25 years and over) With High School Diploma and Some College or Associates Degree,American Community Survey,2007-2011,
+Economic and Workforce Development,bahigherXX,Percent  Population (25 years and over) with a Bachelor's Degree or Above,American Community Survey,2007-2011,
+Economic and Workforce Development,compropXX,Total Number of Commercial Properties,Maryland Property View,"2010, 2011",
+Economic and Workforce Development,crehabXX,"Percent of Commercial Properties with Rehab Permits Above $5,000",Baltimore City Department of Housing,"2010, 2011",Maryland Property View
+Economic and Workforce Development,numbusXX,Total Number of Businesses,InfoUSA,"2010, 2011",
+Economic and Workforce Development,totempXX,Total Number of Employees,InfoUSA,"2010, 2011",
+Economic and Workforce Development,smlbusXX,Number of Businesses with Under 50 Employees,InfoUSA,"2010, 2011",
+Economic and Workforce Development,banksXX,"Number of Banks and Bank Branches per 1,000 Residents",Federal Deposit Insurance Corporation,2011,U.S. Bureau of the Census
+Economic and Workforce Development,biz1_XX,Percent of Businesses that are 1 year old or less,InfoUSA,"2010, 2011",
+Economic and Workforce Development,biz2_XX,Percent of Businesses that are 2 years old or less,InfoUSA,"2010, 2011",
+Economic and Workforce Development,biz4_XX,Percent of Businesses that are 4 years old or less,InfoUSA,"2010, 2011",
+Economic and Workforce Development,neiindXX,Number of Businesses by Selected Neighborhood Industry (NAICS Sectors),InfoUSA,"2010, 2011",
+Economic and Workforce Development,neibusXX,"Neighborhood Businesses per 1,000 residents (NAICS Sectors)",InfoUSA,"2010, 2011",
+Economic and Workforce Development,neiempXX,Total number of Employees by Selected Nieghborhood Industry (NAICS Sectors),InfoUSA,"2010, 2011",
+Sustainability,regvoteXX,Percent of Population (Over the age of 18) Who are Registered to Vote,Baltimore City Board of Elections,2010,
+Sustainability,votedXX,Percent Population (Over the age of 18) Who Voted in the General Election,Baltimore City Board of Elections,2010,
+Sustainability,dirtystXX,"Rate of Dirty Streets and Alleys Reports per 1,000 Residents",Baltimore City CitiStat,"2010, 2011",U.S. Bureau of the Census
+Sustainability,cloggedXX,"Rate of Clogged Storm Drain Reports per 1,000 Residents",Baltimore City CitiStat,"2010, 2011",U.S. Bureau of the Census
+Sustainability,drvaloneXX,Percent of Population that Drove Alone to Work,American Community Survey,2007-2011,
+Sustainability,carpoolXX,Percent of Population that Carpool to Work,American Community Survey,2007-2011,
+Sustainability,pubtranXX,Percent of Population that Uses Public Transportation to Get to Work,American Community Survey,2007-2011,
+Sustainability,walkedXX,Percent of Population that Walks to Work,American Community Survey,2007-2011,
+Sustainability,trav14_XX,Percent of Employed Population with Travel Time to Work of 0-14 Minutes,American Community Survey,2007-2011,
+Sustainability,trav29_XX,Percent of Employed Population with Travel Time to Work of 15-29 Minutes,American Community Survey,2007-2011,
+Sustainability,trav44_XX,Percent of Employed Population with Travel Time to Work of 30-44 Minutes,American Community Survey,2007-2011,
+Sustainability,trav45_XX,Percent of Employed Population with Travel Time to Work of 45 Minutes and Over,American Community Survey,2007-2011,
+Sustainability,treesXX,Percent of Area Covered by Trees,University of Vermont Spatial Analysis Lab,2007,
+Sustainability,cmosXX,Number of Community Managed Open Spaces,Baltimore Neighborhood Indicators Alliance - Jacob France Institute,2011,
+Sustainability,watercXX,Median Daily Water Consumption,Baltimore City Department of Public Works,2011,
+Sustainability,heatgasXX,Percent of Residences Heated by Utility Gas,American Community Survey,2007-2011,
+Sustainability,elheatXX,Percent of Residences Heated by Electricity,American Community Survey,2007-2011,
+Sustainability,novhclXX,Percent of Households with No Vehicles Available,American Community Survey,2007-2011,
+Sustainability,weatherXX,Percent of Homes Weatherized,Maryland Department of Housing and Community Development,"2010, 2011",Maryland Property View
+Sustainability,wlkscXX,Walk Score,Walk Score,2011,
+Sustainability,othrcomXX,"Percent of Population Using Other Means to Commute to Work (Taxi, Motorcycle, Bicycle, Other)",American Community Survey,2007-2011,

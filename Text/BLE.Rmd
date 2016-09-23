@@ -1,0 +1,444 @@
+---
+title: "Baltimore Life Expectancy"
+author: "Kayode Sosina"
+date: "September 12, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro
+
+Goal: To develop a model for predicting life expectancy in Baltimore down to single block resolution with estimates of uncertainty. **You may need to develop an approach for “downsampling” since the outcome data you’ll be able to find is likely aggregated at the neighborhood level**
+
+```{r housekeeping, include=FALSE, message=FALSE}
+# d <- getwd()
+setwd(file.path(".."))  
+source(file.path(".", "directories.R"))
+
+# source(paste0(d,"/directories.R"))
+dir_create()
+
+match.package <- function(){
+  list.of.packages <- c("ggplot2", "Rcpp", "lubridate", "downloader", 
+                        "readr", "readxl", "maptools", "RColorBrewer",
+                        "ggmap", "rgeos", "broom", "rgdal", "grDevices",
+                        "animation") #list of packages that will be used
+  new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+  if(length(new.packages) > 0) {
+    stop(paste("Please install the following packages", paste0(new.packages,collapse = " ")))
+    # print(paste("The following packages are missing", new.packages))
+    # x <- readline("Would you like to install them now?[y/n] >")
+    # if (any(x %in% c("y", "n")) & x == "y")
+    # {
+    #   install.packages(new.packages)
+    # }
+    # else if (!any(x %in% c("y", "n")))
+    #   print("Please enter y or n")
+    # else
+    #   stop(paste("Please install the following packages", paste0(new.packages,collapse = " ")))
+  }
+  
+}
+
+match.package()
+
+
+
+```
+
+## Data
+
+We have data from [Baltimore city website](https://data.baltimorecity.gov), [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org), and from the [Maryland department of planning](http://www.mdp.state.md.us/). The data consists of information about life expectancy estimates for each neighbourhood, along with crime, economic development and education informmation, all over a 5 year period (2010-2014). I also have street level, and thus block level data. In addition I have information which links streets to blocks and then to neighbourhood.
+
+```{r data, include=FALSE, message=FALSE}
+setwd(file.path("..", "Data"))  
+packages <- c("ggplot2","lubridate", "downloader", 
+              "readr", "readxl", "maptools", "RColorBrewer", 
+              "ggmap", "devtools", "rgeos", "broom", "rgdal", 
+              "grDevices", "animation")
+sapply(packages, library, character.only = T, quietly = T)
+
+# setwd("../Data")
+
+Real_Property_Taxes <- "https://data.baltimorecity.gov/api/views/27w9-urtv/rows.csv?accessType=DOWNLOAD"
+Parks <- "https://data.baltimorecity.gov/api/views/3r8a-uawz/rows.csv?accessType=DOWNLOAD"
+Religious_Buildings <- "https://data.baltimorecity.gov/api/views/kbdc-bpw3/rows.csv?accessType=DOWNLOAD"
+Libraries <- "https://data.baltimorecity.gov/api/views/tgtv-wr5u/rows.csv?accessType=DOWNLOAD"
+Liquor_Licenses <- "https://data.baltimorecity.gov/api/views/xv8d-bwgi/rows.csv?accessType=DOWNLOAD"
+Customer_Service_Requests_311 <- "https://data.baltimorecity.gov/api/views/9agw-sxsr/rows.csv?accessType=DOWNLOAD"
+Assisted_Living_Facilities <- "https://data.baltimorecity.gov/api/views/q2vm-e9dp/rows.csv?accessType=DOWNLOAD"
+Adult_Day_Care_Facilities <- "https://data.baltimorecity.gov/api/views/yc75-xbrv/rows.csv?accessType=DOWNLOAD"
+Nursing_Homes <- "https://data.baltimorecity.gov/api/views/53js-3bkd/rows.csv?accessType=DOWNLOAD"
+Census_Profile_by_Neighborhood_Statistical_Areas_2010 <- "https://data.baltimorecity.gov/api/views/5iam-bd6p/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010 <- "https://data.baltimorecity.gov/api/views/cix3-h4cy/rows.csv?accessType=DOWNLOAD"
+Neighborhood_Action_Sense_of_Community_2010 <- "https://data.baltimorecity.gov/api/views/ipje-efsv/rows.csv?accessType=DOWNLOAD"
+Real_Property <- "http://gisdata.baltimorecity.gov/datasets/b41551f53345445fa05b554cd77b3732_0.csv"
+
+#####     All 2010 to 2014 data     #####
+
+Census_Demographics_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/t7sb-aegk/rows.csv?accessType=DOWNLOAD"
+Children_and_Family_Health_Well_Being_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/rtbq-mnni/rows.csv?accessType=DOWNLOAD"
+Housing_and_Community_Development_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/mvvs-32jm/rows.csv?accessType=DOWNLOAD"
+Crime_Safety_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/qmw9-b8ep/rows.csv?accessType=DOWNLOAD"
+Workforce_and_Economic_Development_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Workforce-2010-2014.xlsx"
+Arts_and_Culture_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Arts-2011-2014.xlsx"
+Education_and_Youth_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Education-2010-2014.xlsx"
+Sustainability_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Sustainability-2010-2014.xlsx"
+
+#####      CODEBOOK     #####
+BNIA_Vital_Signs_Codebook <- "https://data.baltimorecity.gov/api/views/ryvy-9zw6/rows.csv?accessType=DOWNLOAD"
+if(!file.exists(file.path("..", "Text","codebook.csv"))){
+  download(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),mode="wb")
+}
+
+
+
+#####     Downloading the files und save ze dates    #####
+####      1 Neighbourhood data      ####
+# data_path <- file.path(".", "Data")
+data_names <- c("census.csv", "child_and_fam_wellbeing.csv", "housing.csv",
+                "crime.csv", "workforce.xlsx", "culture.xlsx", "edu_and_youth.xlsx", "sustain.xlsx")
+data_urls <- c(Census_Demographics_2010_to_2014, Children_and_Family_Health_Well_Being_2010_to_2014,
+               Housing_and_Community_Development_2010_to_2014, Crime_Safety_2010_to_2014,
+               Workforce_and_Economic_Development_2010_to_2014, Arts_and_Culture_2010_to_2014,
+               Education_and_Youth_2010_to_2014, Sustainability_2010_to_2014)
+
+
+mapply(function(x,y) {
+  if(!file.exists("raw_data")){
+    dir.create("raw_data")
+  }
+  if(!file.exists(file.path(".", "raw_data",y))){
+    download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
+    date_downloaded <- now()
+    write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
+  }
+},data_urls,data_names)
+
+#####     2 Data that could ID Blocks within a Neighbourhood     #####
+data_names <- c("property.csv", "parks.csv", "religious.csv","libraries.csv", "cust_311.csv", "real_property.csv") 
+
+#cust_311 has zip, address and neighbourhood
+
+data_urls <- c(Real_Property_Taxes, Parks, Religious_Buildings, Libraries, Customer_Service_Requests_311,Real_Property)
+
+
+mapply(function(x,y) {
+  if(!file.exists("raw_data")){
+    dir.create("raw_data")
+  }
+  v <- list.files(file.path(".", "raw_data"), pattern = "*.csv")
+  lv <- length(v)
+  if(!file.exists(file.path(".", "raw_data",y)) & lv < 10){
+    download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
+    date_downloaded <- now()
+    write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
+    if(file.info(file.path(".", "raw_data",y))$size*1e-6 > 50 )
+      system(paste("gzip", file.path(".", "raw_data",y)))
+  }
+},data_urls,data_names)
+
+
+
+####      Shape_files     ####
+zip_Census_Demographics_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Census.zip"
+zip_Children_and_Family_Health_Well_Being_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Health.zip"
+zip_Housing_and_Community_Development_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Housing.zip"
+zip_Crime_Safety_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Crime.zip"
+
+zip_Workforce_and_Economic_Development_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Workforce.zip"
+zip_Arts_and_Culture_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Arts.zip"
+zip_Education_and_Youth_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Education.zip"
+zip_Sustainability_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Sustainability.zip"
+zip_census_block_2010 <- "http://www.mdp.state.md.us/msdc/census/cen2010/maps/tiger10/blk2010.zip" # 2010 shapefile showing block info
+zip_neighbour <- "https://data.baltimorecity.gov/download/ysi8-7icr/application%2Fzip"
+
+data_names <- c("census.zip", "child_and_fam_wellbeing.zip", "housing.zip",
+                "crime.zip", "workforce.zip", "culture.zip", "edu_and_youth.zip", 
+                "sustain.zip", "census_blk.zip", "neighbour.zip")
+data_urls <- c(zip_Census_Demographics_2010_to_2014, zip_Children_and_Family_Health_Well_Being_2010_to_2014,
+               zip_Housing_and_Community_Development_2010_to_2014, zip_Crime_Safety_2010_to_2014,
+               zip_Workforce_and_Economic_Development_2010_to_2014, zip_Arts_and_Culture_2010_to_2014,
+               zip_Education_and_Youth_2010_to_2014, zip_Sustainability_2010_to_2014, zip_census_block_2010,
+               zip_neighbour)
+
+
+mapply(function(x,y) {
+  if(!file.exists("raw_data")){
+    dir.create("raw_data")
+  }
+  if(!file.exists(file.path(".", "raw_data",y))){
+    download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
+    date_downloaded <- now()
+    write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
+  }
+},data_urls,data_names)
+
+###   Extract the zip files   ###
+
+##All except neighbour and block data
+sapply(data_names, function(x){
+  if(!file.exists("wip")){
+    dir.create("wip")
+  }
+  no_files_expected <- 7*length(data_names)
+  
+  if (length(list.files(file.path(".","wip"))) < no_files_expected){
+    unzip(file.path(".","raw_data", x), 
+          # files = grep("*.shp|*.dbf|*.shx",unzip(file.path(".","raw_data", x), list = T)[,1], value = T),
+          exdir = file.path(".","wip"), junkpaths = T)
+  }
+  
+})
+
+##rename them
+sapply(list.files(file.path(".","wip"), # pattern="*.shp|*.dbf|*.shx"
+), 
+function(x){
+  file.rename(from =file.path(".","wip", x), 
+              to = file.path(".","wip", tolower(gsub("^.*?_", "", x, ignore.case = T)) ) )
+}
+)
+
+##    Create a sub dir under WIP for each dataset and move the file into it
+shape_dirs <- sapply(list.files(file.path(".","wip")), function(x){
+  strsplit(x, "[.]")[[1]][1]
+}
+)
+
+
+sapply(shape_dirs, function(x){
+  if(!file.exists( file.path(".","wip",x)) ){
+    dir.create(file.path(".","wip",x))
+    files_to_copy <- list.files(file.path(".","wip"), pattern= paste0(x,"[.]*"))[-1]
+    file.copy( paste0(file.path(".","wip", files_to_copy)) ,
+               file.path(file.path(".","wip", x)) )
+    file.remove(paste0(file.path(".","wip", files_to_copy)))
+  }
+  else if (file.exists( file.path(".","wip",x))){
+    files_to_del <- list.files(file.path(".","wip"), pattern= paste0(x,"[.]*"))[-1]
+    file.remove(paste0(file.path(".","wip", files_to_del)))
+  }
+}
+)
+
+#Block data
+if(!file.exists(file.path("..", "Plots", "block_b.png"))){
+  ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
+  ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
+  if(!file.exists( file.path(".","wip", ifiles.name ) )){
+    dir.create(file.path(".","wip", ifiles.name ))
+    unzip(file.path(".","raw_data", "census_blk.zip"), 
+          files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
+  }
+}
+
+#Neighbourhood data
+ifiles <- unzip(file.path(".","raw_data", "neighbour.zip"), list = T)
+ifiles.name <- substr(ifiles[,1][1], 1, 5)
+if(!file.exists( file.path(".","wip", ifiles.name ) )){
+  dir.create(file.path(".","wip", ifiles.name ))
+  unzip(file.path(".","raw_data", "neighbour.zip"), 
+        files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
+  file.to.del <- list.files(file.path(".","wip", ifiles.name ), pattern = ".shp|.atx", full.names = T)[-2]
+  # system(paste("rm", file.to.del[1], file.to.del[2]))
+}
+
+
+
+
+setwd(file.path(".."))
+```
+
+## Descriptives
+
+Since the goal of this analysis is to predict life expectancy at the street block level and since the block information conatined in my dataset does not 
+Since some of the data files have information on neighbourhood blocks, I plotted the Neighbourhood information as defined or delineated by the block level data gotten from the [Baltimore city website](https://data.baltimorecity.gov) and then overlayed the neighbourhood data gotten from the [Maryland department of planning](http://www.mdp.state.md.us/). Futhermore, using information from the [Baltimore gisdata website](http://gisdata.baltimorecity.gov) I was able to obtain what "block" was actually defined as. All this points to the possiblity of using blocks from our dataset as street blocks.
+
+```{r Plots, echo=FALSE, message=FALSE, cache.lazy=TRUE, eval=FALSE}
+# print(getwd())
+setwd(file.path("..", "Data"))
+# print(shape_dirs)
+
+# load up area shape file:
+
+# my_shape_files <- list.files(file.path(".","wip","arts"), pattern = ".shp")
+# 
+# area <- readShapePoly(file.path(".","wip", "arts",my_shape_files ))
+# 
+# # library(RColorBrewer)
+# 
+# 
+# # library(ggmap)
+# # get_map(location = 'Baltimore', zoom = 12)
+# map <- get_map("Baltimore City", 
+#                maptype = "terrain",
+#                zoom = 12)
+# # mapImage <- get_map(location = c(lon = -118, lat = 37.5),
+# #   color = "color",
+# #   source = "osm",
+# #   # maptype = "terrain",
+# #   zoom = 6)
+# area.points <- broom(area)
+# length(unique(area.points$id))
+# 
+# # colors <- brewer.pal(9, "RdPu")
+# 
+# ggmap(map) +
+#   geom_polygon(aes(x = long,
+#                    y = lat,
+#                    group = group),
+#                data = area.points,
+#                fill = area.points$group,
+#                alpha = 0.5) +
+#   labs(title = "Neighbourhoods as defined by Blocks",
+#        x = "Longitude",
+#        y = "Latitude")
+
+
+
+data <- read_csv(file.path("raw_data", "property.csv"))
+subset(data, select = c("Block", "Neighborhood", "Location")) -> data
+data <- na.omit(data)
+new_loc <-  sapply(data$Location, function(x) {
+  y <- substr(x, start = 2, stop = nchar(x) - 1)
+  strsplit(y, ", ")[[1]]
+}
+)
+new_loc <- t(new_loc)
+data <- data.frame(data[,c(1,2)], lat = as.numeric(new_loc[,1]), lon = as.numeric(new_loc[,2]))
+
+dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
+                  lon = tapply(data$lon, data$Neighborhood, median),
+                  lat =tapply(data$lat, data$Neighborhood, median), stringsAsFactors=FALSE)
+
+##Choose length of character the name neighbourhood has to have to be displayed
+n.name <- 7
+dat[nchar(dat$Neighborhood) <= n.name,] -> dat1
+map <- get_map(location = "Baltimore City", zoom = 12, maptype = "roadmap" )
+p <- ggmap(map)
+p + geom_point(data=data,aes(x = lon, y = lat, colour = factor(data$Neighborhood):factor(data$Block) )) +
+  geom_text(data=dat1,
+            aes(label = as.factor(dat1$Neighborhood)), 
+            colour="Black",size=2,hjust="center", 
+            vjust="center") +
+  labs(title = "Neighbourhoods as defined by Blocks Using just Block level data",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none") 
+
+gor <- readOGR(file.path("wip", "nhood"), "nhood_2010")
+gor <- spTransform(gor, CRS("+proj=longlat +datum=WGS84"))
+gor <- tidy(gor)
+
+p + 
+  geom_point(data=data,aes(x = lon, y = lat, colour = as.factor(data$Neighborhood) ))  +
+  geom_text(data = dat1, aes(label = as.factor(dat1$Neighborhood)), 
+            colour="Black",size=2,hjust="center", 
+            vjust="center") +
+  geom_polygon(data=gor, aes(x=long, y=lat, group=group), color="red", alpha=0) +
+  # geom_map(map=gor, data=gor, aes(map_id=id, x=long, y=lat, group=group), color="red", alpha=0) +
+  coord_quickmap() +
+  labs(title = "The fit of Block info on block data in Baltimore City",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none") 
+
+
+##    The fit of Block info on Neighbourhood data in Baltimore City
+gor <- readOGR(file.path("wip", "blk2010"), "blk2010")
+gor <- spTransform(gor, CRS("+proj=longlat +datum=WGS84"))
+gor <- tidy(gor)
+
+
+p + 
+  # geom_point(data=dat1,aes(x = lon, y = lat, colour = as.factor(dat1$Neighborhood),fill = as.factor(dat1$Neighborhood) )) +
+  geom_text(data = dat1, aes(label = as.factor(dat1$Neighborhood)), 
+            colour="Black",size=2,hjust="center", 
+            vjust="center") +
+  geom_polygon(data=gor, aes(x=long, y=lat, group=group, fill = group), color="red", alpha=0) +
+  # geom_map(map=gor, data=gor, aes(map_id=id, x=long, y=lat, group=group), color="red", alpha=0) +
+  coord_map() +
+  labs(title = "Blocks in Baltimore City",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none") 
+
+
+p + 
+  geom_point(data=data,aes(x = lon, y = lat, colour = as.factor(data$Neighborhood) ))  +
+  geom_text(data = dat1, aes(label = as.factor(dat1$Neighborhood)), 
+            colour="Black",size=2,hjust="center", 
+            vjust="center") +
+  geom_polygon(data=gor, aes(x=long, y=lat, group=group), color="red", alpha=0) +
+  # geom_map(map=gor, data=gor, aes(map_id=id, x=long, y=lat, group=group), color="red", alpha=0) +
+  coord_quickmap() +
+  labs(title = "The fit of Block info on block data in Baltimore City",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none") 
+
+
+
+
+# re <- c("No neigbourhoods_data" = dim(dat)[1], "No neigbourhoods_shapefile" = length(unique(gor$group)))
+# print(re)
+
+# plot(pressure)
+
+
+# p + geom_point(data=data,aes(x = lon, y = lat, colour = as.factor(data$Block))) +
+#   labs(title = "Neighbourhoods as defined by Blocks",
+#        x = "Longitude",
+#        y = "Latitude") +
+#   theme(legend.position = "none") 
+
+
+
+setwd(file.path(".."))
+```
+
+<!-- ![Neighbourhoods as defined by blocks using just block level data](../Plots/n_block_block.png) ![The fit of neighbourhood info on block data in Baltimore City](../Plots/block_block.png) ![Blocks in Baltimore City](../Plots/block_n.png)   -->
+
+![The fit of block info on block data in Baltimore City](../Plots/block_b.png) 
+
+For more plots examining the fits please visit [my github repo](https://github.com/ksosina/BLE/tree/master/Plots)
+
+```{r proof, echo=FALSE, message=FALSE,warning=FALSE}
+real.prop <- read_csv(file.path("..","Data","raw_data", "real_property.csv.gz"))
+random_block <- sample(real.prop$BLOCKPLAT,1)
+if(!file.exists(file.path("..", "Plots", "random_block.pdf")))
+{
+  download(random_block, destfile = file.path("..", "Plots", "random_block.pdf"), mode = "wb")
+}
+# print(getwd())
+# file.show(file.path("..", "Plots", "random_block.pdf"))
+if(!file.exists(file.path("..", "Plots", "random_block.png")))
+{
+  im.convert(file.path("..", "Plots", "random_block.pdf"), output = file.path("..", "Plots", "random_block.png"))
+}
+
+```
+
+All of this indicate a good fit. I also used gis data from the [baltimore city website](http://gisdata.baltimorecity.gov/) and I found that each block was defined as a street block.[An example of a cityblock pulled from dataset](../Plots/random_block.png)
+
+```{r version}
+devtools::session_info()
+```
+
+| Name                                    | Information                                                                                                                                                                                                             | Type      | Data Source                                                                                          | Geographic Scale   | Date        |
+|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|------------------------------------------------------------------------------------------------------|--------------------|-------------|
+| Real Property Taxes                     | Contains information on which streets belong to which block and in what neighbourhood along with their longitude and latitude. Also has information on police district.                                                 | Dataset   | [Baltimore city website](https://data.baltimorecity.gov)                                             | Street Level       | 2016        |
+| Real Property                           | Contains the City of Baltimore parcel boundaries, with ownership, address, valuation and other property information. Furthermore, it also contains street block definitions.                                            | Dataset   | [Baltimore gisdata website](http://gisdata.baltimorecity.gov)                                        | Street level       | 2016        |
+| Census Block                            | GIS shapefile which has information on census block designation for 2010                                                                                                                                                | Shapefile | [Maryland department of planning](http://planning.maryland.gov/msdc/S5_Map_GIS.Shtml)                | Block level        | 2010        |
+| Neighborhoood                           | Polygon feature representing the boundaries of Baltimore City's neighborhoods as of the year 2010                                                                                                                       | Shapefile | [Baltimore city website](https://data.baltimorecity.gov)                                             | Neighborhood level | 2010        |
+| Census Demographics for 2010 to 2014    | Contains neighborhood level demographics data                                                                                                                                                                           | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/vital_signs/data_downloads/) | Neighborhood level | 2010 - 2014 |
+| Children and Family Health & Well-Being | Has information on life expectancy for 2010 to 2014                                                                                                                                                                     | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/vital_signs/data_downloads/) | Neighborhood level | 2010 - 2014 |
+| BNIA Vital Signs Codebook               | Contain information on short variable names and their corresponding full names, along with their sources for each dataset                                                                                               | Dataset   | [Baltimore city website](https://data.baltimorecity.gov)                                             | Neighborhood level | 2016        |
+| Housing and Community Development       | Has information on the state of households in Baltimore city, viz;Number of Homes Sold,Percentage of Residential Properties that are Vacant and Abandoned,Percent Residential Properties that do Not Receive Mail, etc. | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/vital_signs/data_downloads/) | Neighborhood level | 2010-2014   |
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
