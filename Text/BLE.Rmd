@@ -3,6 +3,51 @@ title: "Baltimore Life Expectancy"
 author: "Kayode Sosina"
 date: "September 12, 2016"
 output: html_document
+references:
+- id: mantel
+  title: "The Mantel Test versus Pearson's Correlation Analysis: Assessment of the Differences for Biological and Environmental Studies"
+  author:
+  - family: Dutilleul
+    given: Pierre  
+  - family: Stockwell 
+    given: Jason 
+  - family: Frigon
+    given: Dominic
+  - family: Legendre
+    given: Pierre
+  container-title: "Journal of Agricultural, Biological, and Environmental Statistics"
+  volume: 5
+  URL: 'http://www.jstor.org/stable/1400528'
+  publisher: "International Biometric Society"
+  page: 131-150
+  type: article-journal
+  issued:
+    year: 2000
+    month: 6
+- id: moran
+  title: "Notes on Continuous Stochastic Phenomena"
+  author:
+  - family: Moran
+    given: "Patrick Alfred Pierce"
+  container-title: "Biometrika"
+  volume: 37
+  URL: 'http://www.jstor.org/stable/2332142'
+  publisher: " Oxford University Press on behalf of Biometrika Trust"
+  page: 17-23
+  type: article-journal
+  issued:
+    year: 1950
+    month: 6
+- id: mantel1
+  title: "The Detection of Disease Clustering and a Generalized Regression Approach"
+  author:
+  - family: Mantel
+    given: "Nathan"
+  container-title: "American Association for Cancer Research."
+  type: article-journal
+  issued:
+    year: 1966
+    month: 9
 ---
 
 ```{r setup, include=FALSE}
@@ -423,9 +468,34 @@ if(!file.exists(file.path("..", "Plots", "random_block.png")))
 
 All of this indicate a good fit. I also used gis data from the [baltimore city website](http://gisdata.baltimorecity.gov/) and I found that each block was defined as a street block.[An example of a cityblock pulled from dataset](../Plots/random_block.png)
 
-```{r version}
-devtools::session_info()
+##Analysis
+Since we have spatial data I ran the both Mantel test[c.f @mantel1] and Moran's I [c.f @moran] to examine if spatial autocorrelation exists in this dataset. Please note that while both test measure spatial autocorrelation, they refer to quite different concepts
+
+Moran's I[@moran] is useful when one wants to know the correlation of a variable with itself through space. I.e., when one wants to know to which extent the occurrence of an event in an areal unit makes it more likely or unlikely the occurrence of an event in a neighboring areal unit.
+
+Mantel's test[@mantel1; @mantel] gives correlation between different variables due to their spatial location, that is Mantel's test judges whether closeness in one set of variables is related to closeness in another set of variable. Relating this to our datasetwe can use it to see if samples that are close in terms of their geographic location values are also close in terms of life expectancy values.
+
+```{r Mantel}
+setwd(file.path("..", "Data"))
+data <- read_csv(file.path("raw_data", "property.csv"))
+subset(data, select = c("Block", "Neighborhood", "Location")) -> data
+data <- na.omit(data)
+new_loc <-  sapply(data$Location, function(x) {
+  y <- substr(x, start = 2, stop = nchar(x) - 1)
+  strsplit(y, ", ")[[1]]
+}
+)
+new_loc <- t(new_loc)
+data <- data.frame(data[,c(1,2)], lat = as.numeric(new_loc[,1]), lon = as.numeric(new_loc[,2]))
+
+dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
+                  lon = tapply(data$lon, data$Neighborhood, median),
+                  lat =tapply(data$lat, data$Neighborhood, median), stringsAsFactors=FALSE)
+
+setwd(file.path(".."))
 ```
+
+## Datasets
 
 | Name                                    | Information                                                                                                                                                                                                             | Type      | Data Source                                                                                          | Geographic Scale   | Date        |
 |-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|------------------------------------------------------------------------------------------------------|--------------------|-------------|
@@ -439,4 +509,9 @@ devtools::session_info()
 | Housing and Community Development       | Has information on the state of households in Baltimore city, viz;Number of Homes Sold,Percentage of Residential Properties that are Vacant and Abandoned,Percent Residential Properties that do Not Receive Mail, etc. | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/vital_signs/data_downloads/) | Neighborhood level | 2010-2014   |
 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r version}
+devtools::session_info()
+```
+
+# References
