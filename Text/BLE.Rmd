@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Goal: To develop a model for predicting life expectancy in Baltimore down to single block resolution with estimates of uncertainty. **You may need to develop an approach for “downsampling” since the outcome data you’ll be able to find is likely aggregated at the neighborhood level**
 
-```{r housekeeping, include=FALSE, message=FALSE}
+```{r housekeeping, include=FALSE, message=FALSE, eval=T}
 # d <- getwd()
 setwd(file.path(".."))  
 source(file.path(".", "directories.R"))
