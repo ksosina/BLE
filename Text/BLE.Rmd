@@ -226,14 +226,12 @@ sapply(shape_dirs, function(x){
 )
 
 #Block data
-if(!file.exists(file.path("..", "Plots", "block_b.png"))){
-  ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
-  ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
-  if(!file.exists( file.path(".","wip", ifiles.name ) )){
-    dir.create(file.path(".","wip", ifiles.name ))
-    unzip(file.path(".","raw_data", "census_blk.zip"), 
-          files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
-  }
+ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
+ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
+if(!file.exists( file.path(".","wip", ifiles.name ) )){
+  dir.create(file.path(".","wip", ifiles.name ))
+  unzip(file.path(".","raw_data", "census_blk.zip"), 
+        files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
 }
 
 #Neighbourhood data
