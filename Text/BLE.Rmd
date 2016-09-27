@@ -299,7 +299,7 @@ setwd(file.path(".."))
 ## Descriptives
 
 Since the goal of this analysis is to predict life expectancy at the street block level and since the block information conatined in my dataset does not 
-Since some of the data files have information on neighbourhood blocks, I plotted the Neighbourhood information as defined or delineated by the block level data gotten from the [Baltimore city website](https://data.baltimorecity.gov) and then overlayed the neighbourhood data gotten from the [Maryland department of planning](http://www.mdp.state.md.us/). Futhermore, using information from the [Baltimore gisdata website](http://gisdata.baltimorecity.gov) I was able to obtain what "block" was actually defined as. All this points to the possiblity of using blocks from our dataset as street blocks.
+Since some of the data files have information on neighbourhood blocks, I plotted the Neighbourhood information as defined or delineated by the block level data gotten from the [Baltimore city website](https://data.baltimorecity.gov) and then overlayed the neighbourhood data gotten from the [Maryland department of planning](http://www.mdp.state.md.us/). Futhermore, using information from the [Baltimore gisdata website](http://gisdata.baltimorecity.gov) I was able to obtain what "block" was actually defined as. All of this points to the possiblity of using blocks from our dataset as street blocks.
 
 ```{r Plots, echo=FALSE, message=FALSE, cache.lazy=TRUE, eval=FALSE}
 # print(getwd())
@@ -446,7 +446,7 @@ setwd(file.path(".."))
 
 <!-- ![Neighbourhoods as defined by blocks using just block level data](../Plots/n_block_block.png) ![The fit of neighbourhood info on block data in Baltimore City](../Plots/block_block.png) ![Blocks in Baltimore City](../Plots/block_n.png)   -->
 
-![The fit of block info on block data in Baltimore City](../Plots/block_b.png) 
+![](../Plots/block_b.png) 
 
 For more plots examining the fits please visit [my github repo](https://github.com/ksosina/BLE/tree/master/Plots)
 
@@ -475,7 +475,7 @@ Moran's I[@moran] is useful when one wants to know the correlation of a variable
 
 Mantel's test[@mantel1; @mantel] gives correlation between different variables due to their spatial location, that is Mantel's test judges whether closeness in one set of variables is related to closeness in another set of variable. Relating this to our datasetwe can use it to see if samples that are close in terms of their geographic location values are also close in terms of life expectancy values.
 
-```{r Mantel}
+```{r Mantel, echo=FALSE}
 setwd(file.path("..", "Data"))
 data <- read_csv(file.path("raw_data", "property.csv"))
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
@@ -491,6 +491,8 @@ data <- data.frame(data[,c(1,2)], lat = as.numeric(new_loc[,1]), lon = as.numeri
 dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
                   lon = tapply(data$lon, data$Neighborhood, median),
                   lat =tapply(data$lat, data$Neighborhood, median), stringsAsFactors=FALSE)
+
+dat.le <-  read_csv(file.path("raw_data", "child_and_fam_wellbeing.csv"))
 
 setwd(file.path(".."))
 ```
