@@ -17,9 +17,9 @@ new_loc <- t(new_loc)
 data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
 dat1 <- data
 
-dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
-                  lon = data$lon,
-                  lat =data$lat, stringsAsFactors=FALSE)
+# dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
+#                   lon = data$lon,
+#                   lat =data$lat, stringsAsFactors=FALSE)
 
 #Step 1
 ### Check if Lng and Lat fall inside polygons from ESRI Shape file for Child and wellbeing (this has the outcome)
@@ -62,7 +62,7 @@ clnames <- names(health)
 clnames[1] <- "CSA"
 names(health) <- clnames
 
-# Get variable names\
+# Get variable names
 library(dplyr)
 
 gsub("_[[:digit:]]*","",names(health))[-1] -> variables
@@ -80,7 +80,7 @@ unique(variables) -> var.names
 # )
 # unname(years) -> years
 
-subset(health, drop = grep(paste0(x), names(health), value = T) )
+# subset(health, drop = grep(paste0(x), names(health), value = T) )
 setdiff(names(health), grep(paste0("mort"), names(health), value = T)) ->rm.mort
 
 #Change from short to long
@@ -112,12 +112,12 @@ health.long <- lapply(var.names[var.names!= "mort"], function(x){
 
 plyr::ldply(health.long, data.frame) -> health.long
 
+
+#get the columns
 columns <-  sapply(strsplit(grep(paste0("mort"),names(health), value = T),"_"),function(x) x[1])
 unique(columns) -> columns
 
 health.long2 <- lapply(columns, function(x){
-  #get the columns
-  
   
   #get the time in years
   time <- sapply(strsplit(grep(paste0("^", x, "_"),
@@ -146,10 +146,66 @@ health.long <- rbind(health.long, health.long2)
 
 rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
 
+#Merge
+health.sub <- subset(health, select = c("CSA", "LifeExp11", 
+                                        "LifeExp12", "LifeExp13",
+                                        "LifeExp14"))
 
-# tidyr::gather(health, variable, value, -CSA) -> check.dat
-extract(check.dat, variable, into = c("Key", "num"))
-merge(neighbhd_csa, dat1) -> 
+
+inner_join(health.sub, neighbhd_csa) %>% #This will have the same number of rows as neighbhd_csa since block neighborhood combinations are unique
+  inner_join(dat1) -> merged.h_n         #This will have more rows since dat1 each block in property.csv has multiple streets
+
+# Mantel's Test
+#we need CSA to be unique so get the median longitude and latitude per CSA
+
+merged.h_n %>% group_by(CSA) %>%
+  summarise(lon.med = median(lon), lat.med = median(lat)) -> mtdata
+
+#note that the number of rows for mtdata is the same as the number of CSA's in our data. Furthermore the number of CSA from BNIA is the same (Baltimore city is not a CSA!!! And so should not be used in the calculations!)
+
+mtdata %>% inner_join(health.sub) -> mtdata
+
+#Testing
+#2011
+csa.dists <- geosphere::distGeo(cbind(mtdata$lon.med, mtdata$lat.med)) #dist(cbind(mtdata$lon.med, mtdata$lat.med), method = "euclidean")
+csa.dists <- as.dist(csa.dists)
+le11.dists <- dist(mtdata$LifeExp11, method = "euclidean")
+
+# ade4::mantel.rtest(csa.dists, le11.dists, nrepet = 9999)
+# plot(ade4::mantel.rtest(csa.dists, le11.dists, nrepet = 9999))
+ade4::mantel.randtest(csa.dists, le11.dists, nrepet = 9999)
+plot(ade4::mantel.randtest(csa.dists, le11.dists, nrepet = 9999))
+
+#2012
+le12.dists <- dist(mtdata$LifeExp12, method = "euclidean")
+
+
+ade4::mantel.randtest(csa.dists, le12.dists, nrepet = 9999)
+plot(ade4::mantel.randtest(csa.dists, le12.dists, nrepet = 9999))
+
+#2013
+le13.dists <- dist(mtdata$LifeExp13, method = "euclidean")
+
+
+ade4::mantel.randtest(csa.dists, le13.dists, nrepet = 9999)
+plot(ade4::mantel.randtest(csa.dists, le13.dists, nrepet = 9999))
+
+#2014
+le14.dists <- dist(mtdata$LifeExp14, method = "euclidean")
+
+
+ade4::mantel.randtest(csa.dists, le14.dists, nrepet = 9999)
+plot(ade4::mantel.randtest(csa.dists, le14.dists, nrepet = 9999))
+
+
+#Moran's I
+csa.dists <- as.matrix(csa.dists)
+
+csa.dists.inv <- 1/csa.dists #solve(csa.dists)
+diag(csa.dists.inv) <- 0
+
+#2011
+ape::Moran.I(mtdata$LifeExp11, csa.dists.inv)
 
 detach("package:dplyr", unload=TRUE)
 # do.call(rbind.data.frame, neighbhd_csa) -> df
