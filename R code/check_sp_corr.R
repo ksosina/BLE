@@ -167,7 +167,7 @@ mtdata %>% inner_join(health.sub) -> mtdata
 
 #Testing
 #2011
-csa.dists <- geosphere::distGeo(cbind(mtdata$lon.med, mtdata$lat.med)) #dist(cbind(mtdata$lon.med, mtdata$lat.med), method = "euclidean")
+csa.dists <- geosphere::distm(cbind(mtdata$lon.med, mtdata$lat.med), fun = distVincentyEllipsoid) #dist(cbind(mtdata$lon.med, mtdata$lat.med), method = "euclidean")
 csa.dists <- as.dist(csa.dists)
 le11.dists <- dist(mtdata$LifeExp11, method = "euclidean")
 
@@ -206,6 +206,15 @@ diag(csa.dists.inv) <- 0
 
 #2011
 ape::Moran.I(mtdata$LifeExp11, csa.dists.inv)
+
+#2012
+ape::Moran.I(mtdata$LifeExp12, csa.dists.inv)
+
+#2013
+ape::Moran.I(mtdata$LifeExp13, csa.dists.inv)
+
+#2014
+ape::Moran.I(mtdata$LifeExp14, csa.dists.inv)
 
 detach("package:dplyr", unload=TRUE)
 # do.call(rbind.data.frame, neighbhd_csa) -> df
