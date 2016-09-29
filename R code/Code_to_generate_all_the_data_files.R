@@ -1,4 +1,4 @@
-setwd(file.path("..", "Data"))  
+setwd(file.path("Data"))  
 packages <- c("ggplot2","lubridate", "downloader", 
               "readr", "readxl", "maptools", "RColorBrewer", "ggmap", "devtools")
 sapply(packages, library, character.only = T, quietly = T)
@@ -16,6 +16,8 @@ Census_Profile_by_Neighborhood_Statistical_Areas_2010 <- "https://data.baltimore
 Census_Demographics_2010 <- "https://data.baltimorecity.gov/api/views/cix3-h4cy/rows.csv?accessType=DOWNLOAD"
 Neighborhood_Action_Sense_of_Community_2010 <- "https://data.baltimorecity.gov/api/views/ipje-efsv/rows.csv?accessType=DOWNLOAD"
 Real_Property <- "http://gisdata.baltimorecity.gov/datasets/b41551f53345445fa05b554cd77b3732_0.csv"
+CSA_to_NSA_2010 <- "http://bniajfi.org/wp-content/uploads/2014/04/CSA-to-NSA-2010.xlsx"
+Census_Blocks_and_NSAs_2010 <- "http://bniajfi.org/wp-content/uploads/2014/04/Census-Blocks-and-NSAs-2010.xlsx"
 
 #####     All 2010 to 2014 data     #####
 
@@ -40,7 +42,8 @@ if(!file.exists(file.path("..", "Text","codebook.csv"))){
 ####      1 Neighbourhood data      ####
 # data_path <- file.path(".", "Data")
 data_names <- c("census.csv", "child_and_fam_wellbeing.csv", "housing.csv",
-                "crime.csv", "workforce.xlsx", "culture.xlsx", "edu_and_youth.xlsx", "sustain.xlsx")
+                "crime.csv", "workforce.xlsx", "culture.xlsx", "edu_and_youth.xlsx", 
+                "sustain.xlsx")
 data_urls <- c(Census_Demographics_2010_to_2014, Children_and_Family_Health_Well_Being_2010_to_2014,
                Housing_and_Community_Development_2010_to_2014, Crime_Safety_2010_to_2014,
                Workforce_and_Economic_Development_2010_to_2014, Arts_and_Culture_2010_to_2014,
@@ -59,11 +62,14 @@ mapply(function(x,y) {
 },data_urls,data_names)
 
 #####     2 Data that could ID Blocks within a Neighbourhood     #####
-data_names <- c("property.csv", "parks.csv", "religious.csv","libraries.csv", "cust_311.csv", "real_property.csv") 
+data_names <- c("csa_nsa.xlsx", "blocks_nsa.xlsx","property.csv", "parks.csv", "religious.csv",
+                "libraries.csv", "cust_311.csv", "real_property.csv") 
 
 #cust_311 has zip, address and neighbourhood
 
-data_urls <- c(Real_Property_Taxes, Parks, Religious_Buildings, Libraries, Customer_Service_Requests_311,Real_Property)
+data_urls <- c(CSA_to_NSA_2010,Census_Blocks_and_NSAs_2010,
+               Real_Property_Taxes, Parks, Religious_Buildings, 
+               Libraries, Customer_Service_Requests_311,Real_Property)
 
 
 mapply(function(x,y) {
