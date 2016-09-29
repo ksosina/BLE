@@ -70,10 +70,11 @@ match.package <- function(){
   list.of.packages <- c("ggplot2", "Rcpp", "lubridate", "downloader", 
                         "readr", "readxl", "maptools", "RColorBrewer",
                         "ggmap", "rgeos", "broom", "rgdal", "grDevices",
-                        "animation") #list of packages that will be used
+                        "animation", "ade4", "sp", "ape", "geosphere") #list of packages that will be used
   new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
   if(length(new.packages) > 0) {
-    stop(paste("Please install the following packages", paste0(new.packages,collapse = " ")))
+    install.packages(new.packages)
+    # stop(paste("Please install the following packages", paste0(new.packages,collapse = " ")))
     # print(paste("The following packages are missing", new.packages))
     # x <- readline("Would you like to install them now?[y/n] >")
     # if (any(x %in% c("y", "n")) & x == "y")
@@ -101,7 +102,8 @@ We have data from [Baltimore city website](https://data.baltimorecity.gov), [Bal
 ```{r data, include=FALSE, message=FALSE}
 setwd(file.path("..", "Data"))  
 packages <- c("ggplot2","lubridate", "downloader", 
-              "readr", "readxl", "maptools", "RColorBrewer", "ggmap", "devtools")
+              "readr", "readxl", "maptools", "RColorBrewer", 
+              "ggmap", "devtools")
 sapply(packages, library, character.only = T, quietly = T)
 
 Real_Property_Taxes <- "https://data.baltimorecity.gov/api/views/27w9-urtv/rows.csv?accessType=DOWNLOAD"
@@ -475,33 +477,205 @@ if(!file.exists(file.path("..", "Plots", "random_block.png")))
 All of this indicate a good fit. I also used gis data from the [baltimore city website](http://gisdata.baltimorecity.gov/) and I found that each block was defined as a street block.[An example of a cityblock pulled from dataset](../Plots/random_block.png)
 
 ##Analysis
-Since we have spatial data I ran the both Mantel test[c.f @mantel1] and Moran's I [c.f @moran] to examine if spatial autocorrelation exists in this dataset. Please note that while both test measure spatial autocorrelation, they refer to quite different concepts
+Since we have spatial data I ran the both Mantel test[c.f @mantel1] and Moran's I [c.f @moran] to examine if spatial autocorrelation exists in this dataset. Please note that while both test measure spatial autocorrelation, they refer to quite different concepts.
 
-Moran's I[@moran] is useful when one wants to know the correlation of a variable with itself through space. I.e., when one wants to know to which extent the occurrence of an event in an areal unit makes it more likely or unlikely the occurrence of an event in a neighboring areal unit.
+Mantel's test[@mantel1; @mantel] gives correlation between different variables due to their spatial location, that is Mantel's test judges whether closeness in one set of variables is related to closeness in another set of variable. Relating this to our datasetwe can use it to see if samples that are close in terms of their geographic location values are also close in terms of life expectancy values. I.e test if the distance matrix based on life expectancy values is correlated with the distance matrix based on spatial location for the CSA's
 
-Mantel's test[@mantel1; @mantel] gives correlation between different variables due to their spatial location, that is Mantel's test judges whether closeness in one set of variables is related to closeness in another set of variable. Relating this to our datasetwe can use it to see if samples that are close in terms of their geographic location values are also close in terms of life expectancy values.
-
-```{r Mantel, echo=FALSE}
+```{r Mantel, echo=FALSE, cache=T, message=FALSE, warning=F}
 setwd(file.path("..", "Data"))
-data <- read_csv(file.path("raw_data", "property.csv"))
+# setwd(file.path("Data"))
+
+#### ID which neighborhoods fall into a CSA
+
+##Load data from real properties that contains block info
+data <- readr::read_csv(file.path("raw_data", "property.csv"))
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
+
 data <- na.omit(data)
+
 new_loc <-  sapply(data$Location, function(x) {
   y <- substr(x, start = 2, stop = nchar(x) - 1)
   strsplit(y, ", ")[[1]]
 }
 )
 new_loc <- t(new_loc)
-data <- data.frame(data[,c(1,2)], lat = as.numeric(new_loc[,1]), lon = as.numeric(new_loc[,2]))
+data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+dat1 <- data
 
-dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
-                  lon = tapply(data$lon, data$Neighborhood, median),
-                  lat =tapply(data$lat, data$Neighborhood, median), stringsAsFactors=FALSE)
+# dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
+#                   lon = data$lon,
+#                   lat =data$lat, stringsAsFactors=FALSE)
 
-dat.le <-  read_csv(file.path("raw_data", "child_and_fam_wellbeing.csv"))
+#Step 1
+### Check if Lng and Lat fall inside polygons from ESRI Shape file for Child and wellbeing (this has the outcome)
+dat.le <-  rgdal::readOGR(file.path("wip", "health"), "health", verbose = F)
+csa <- as.character(dat.le$CSA2010)
+dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
+
+
+# Assignment modified according
+sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
+
+# Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
+sp::proj4string(data) <- sp::proj4string(dat.le)
+
+sp::over(dat.le, data, returnList = T) -> neighbhd_csa #gives which Neighborhood belongs to what CSA
+
+names(neighbhd_csa) <- csa
+
+#Gives a dataframe with cols CSA, Blocks, and Neighborhood so I can match block level info to CSA
+neighbhd_csa <- plyr::ldply (neighbhd_csa, data.frame) 
+clnames <- names(neighbhd_csa)
+clnames[1] <- "CSA"
+names(neighbhd_csa) <- clnames
+
+#Got the CSA to NBHD from BNIA site to compare
+csa_nsa <- readxl::read_excel(file.path(".", "raw_data", "csa_nsa.xlsx"))
+
+#Caution CSA and neighbourhoods are not in 1-1
+with(neighbhd_csa, tapply(CSA, Neighborhood, function(x) length(unique(x)))) -> test.dat
+
+#Get neighbhds where count of CSA = 2 and check
+unique(neighbhd_csa[neighbhd_csa$Neighborhood == names(test.dat[test.dat == 2][1]),][,c(1,3)]) -> not.unique
+# not.unique
+
+
+#Step 2
+# Now that all that is done, I start merging (on block and neighbhd) to get CSA level, neighborhood level and block level data in one dataset
+health <- readr::read_csv(file.path(".", "raw_data", "child_and_fam_wellbeing.csv"))
+clnames <- names(health)
+clnames[1] <- "CSA"
+names(health) <- clnames
+
+# Get variable names
+library(dplyr)
+
+gsub("_[[:digit:]]*","",names(health))[-1] -> variables
+variables[variables == "mort1"] <- "mort01"
+variables <- sapply(variables, function(x){
+  substr(x, start = 1, stop = nchar(x) - 2)
+})
+unname(variables) -> variables
+unique(variables) -> var.names
+
+
+setdiff(names(health), grep(paste0("mort"), names(health), value = T)) ->rm.mort
+
+#Change from short to long
+
+health.long <- lapply(var.names[var.names!= "mort"], function(x){
+  #get the columns
+  columns <- grep(paste0(x),rm.mort, value = T)
+  
+  #get the time in years
+  time <- sapply(gsub("[^_[:digit:]]","",columns), function(x){
+    substr(x, start = nchar(x)-1, stop = nchar(x))
+  }
+  )
+  unname(time) -> time
+  
+  #Select the columns
+  subset(health, select = c("CSA",columns)) -> dat.h
+  
+  n <- dim(dat.h)[1]
+
+  # print(length(time))
+  dat.h <- tidyr::gather(dat.h, variable, value, -CSA)
+  dat.h$time <- rep(as.numeric(time), each = n)
+  dat.h
+  # data.frame(tidyr::gather(dat.h, variable, value, -CSA), time = time)
+  # rbind(cbind(tidyr::gather(dat.h, variable, value, -CSA), time))
+  
+})
+
+plyr::ldply(health.long, data.frame) -> health.long
+
+
+#get the columns
+columns <-  sapply(strsplit(grep(paste0("mort"),names(health), value = T),"_"),function(x) x[1])
+unique(columns) -> columns
+
+health.long2 <- lapply(columns, function(x){
+  
+  #get the time in years
+  time <- sapply(strsplit(grep(paste0("^", x, "_"),
+                               names(health), value = T),"_"),function(x) x[2])
+  time <- as.numeric(time)
+  
+  #Select the columns
+  subset(health, select = c("CSA",
+                            grep(paste0("^", x, "_"), names(health), value = T))
+         ) -> dat.h
+  
+  n <- dim(dat.h)[1]
+  
+  # print(length(time))
+  dat.h <- tidyr::gather(dat.h, variable, value, -CSA)
+  dat.h$time <- rep(as.numeric(time), each = n)
+  dat.h
+  # data.frame(tidyr::gather(dat.h, variable, value, -CSA), time = time)
+  # rbind(cbind(tidyr::gather(dat.h, variable, value, -CSA), time))
+  
+})
+
+plyr::ldply(health.long2, data.frame) -> health.long2
+
+health.long <- rbind(health.long, health.long2)
+
+rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
+
+#Merge
+health.sub <- subset(health, select = c("CSA", "LifeExp11", 
+                                        "LifeExp12", "LifeExp13",
+                                        "LifeExp14"))
+
+
+inner_join(health.sub, neighbhd_csa) %>% #This will have the same number of rows as neighbhd_csa since block neighborhood combinations are unique
+  inner_join(dat1) -> merged.h_n         #This will have more rows since dat1 each block in property.csv has multiple streets
+
+# Mantel's Test
+#we need CSA to be unique so get the median longitude and latitude per CSA
+
+merged.h_n %>% group_by(CSA) %>%
+  summarise(lon.med = median(lon), lat.med = median(lat)) -> mtdata
+
+#note that the number of rows for mtdata is the same as the number of CSA's in our data. Furthermore the number of CSA from BNIA is the same (Baltimore city is not a CSA!!! And so should not be used in the calculations!)
+
+mtdata %>% inner_join(health.sub) -> mtdata
+
+#Testing
+# csa.dists <- dist(cbind(mtdata$lon.med, mtdata$lat.med), method = "euclidean")
+csa.dists <- geosphere::distm(cbind(mtdata$lon.med, mtdata$lat.med), fun = geosphere::distVincentyEllipsoid)
+csa.dists <- as.dist(csa.dists)
+le11.dists <- dist(mtdata$LifeExp11, method = "euclidean")
+
+# ade4::mantel.rtest(csa.dists, le11.dists, nrepet = 9999)
+# plot(ade4::mantel.rtest(csa.dists, le11.dists, nrepet = 9999))
+ade4::mantel.randtest(csa.dists, le11.dists, nrepet = 9999)
+plot(ade4::mantel.randtest(csa.dists, le11.dists, nrepet = 9999), main = "Mantel's test")
+
+
+detach("package:dplyr", unload=TRUE)
+# do.call(rbind.data.frame, neighbhd_csa) -> df
 
 setwd(file.path(".."))
 ```
+
+Based on these results, we can reject the null hypothesis that these two matrices, spatial distance and life expectancy distance (2011), are unrelated with alpha = 0.05.  The observed correlation, r = 0.1021, suggests that the matrix entries are positively associated. So smaller differences in life expectancy are generally seen among pairs of CSA's that are close to each other than far from each other. Note that since this test is based on random permutations, the same code will always arrive at the same observed correlation but rarely the same p-value. Furthemore, I ran this test for all four years in the datset set and the conclusions are consistent. If you are interested in the correlation values for those years [here is the code](https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R).
+
+Moran's I[@moran] is useful when one wants to know the correlation of a variable with itself through space. I.e., when one wants to know to which extent the occurrence of an event in an areal unit makes it more likely or unlikely the occurrence of an event in a neighboring areal unit. I.e if life expectancy is low in the north does that mean that we likely to see low life expectancy in the same region? Thus the null is the lack of existence of spatial autocorrelation.
+```{r Moran, echo=FALSE, cache=TRUE, message=FALSE, warning=F}
+
+csa.dists <- as.matrix(csa.dists)
+
+csa.dists.inv <- 1/csa.dists #solve(csa.dists)
+diag(csa.dists.inv) <- 0
+
+#2011
+ape::Moran.I(mtdata$LifeExp11, csa.dists.inv)
+
+```
+Based on these results, we can reject the null hypothesis that there is zero spatial autocorrelation present in life expectancy at the 5\% level of significance. For more tests using data from 2011 to 2014 please check [here]((https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R)) 
 
 ## Datasets
 
