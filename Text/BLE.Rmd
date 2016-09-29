@@ -54,7 +54,7 @@ references:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Intro
+## Introduction
 
 Goal: To develop a model for predicting life expectancy in Baltimore down to single block resolution with estimates of uncertainty. **You may need to develop an approach for “downsampling” since the outcome data you’ll be able to find is likely aggregated at the neighborhood level**
 
@@ -124,7 +124,14 @@ Census_Blocks_and_NSAs_2010 <- "http://bniajfi.org/wp-content/uploads/2014/04/Ce
 
 #####     All 2010 to 2014 data     #####
 
+# Noticed that demo data for 2010-2014 has only partial info
 Census_Demographics_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/t7sb-aegk/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010_complete <- "https://data.baltimorecity.gov/api/views/cix3-h4cy/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010_and_2012 <- "https://data.baltimorecity.gov/api/views/yp84-wh4q/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010_and_2013 <- "https://data.baltimorecity.gov/api/views/7pnq-8ebe/rows.csv?accessType=DOWNLOAD"
+
+
+
 Children_and_Family_Health_Well_Being_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/rtbq-mnni/rows.csv?accessType=DOWNLOAD"
 Housing_and_Community_Development_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/mvvs-32jm/rows.csv?accessType=DOWNLOAD"
 Crime_Safety_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/qmw9-b8ep/rows.csv?accessType=DOWNLOAD"
@@ -146,12 +153,12 @@ if(!file.exists(file.path("..", "Text","codebook.csv"))){
 # data_path <- file.path(".", "Data")
 data_names <- c("census.csv", "child_and_fam_wellbeing.csv", "housing.csv",
                 "crime.csv", "workforce.xlsx", "culture.xlsx", "edu_and_youth.xlsx", 
-                "sustain.xlsx")
+                "sustain.xlsx", "census10.csv", "census12.csv", "census13.csv")
 data_urls <- c(Census_Demographics_2010_to_2014, Children_and_Family_Health_Well_Being_2010_to_2014,
                Housing_and_Community_Development_2010_to_2014, Crime_Safety_2010_to_2014,
                Workforce_and_Economic_Development_2010_to_2014, Arts_and_Culture_2010_to_2014,
-               Education_and_Youth_2010_to_2014, Sustainability_2010_to_2014)
-
+               Education_and_Youth_2010_to_2014, Sustainability_2010_to_2014, Census_Demographics_2010_complete,
+               Census_Demographics_2010_and_2012, Census_Demographics_2010_and_2013)
 
 mapply(function(x,y) {
   if(!file.exists("raw_data")){
@@ -477,6 +484,8 @@ if(!file.exists(file.path("..", "Plots", "random_block.png")))
 All of this indicate a good fit. I also used gis data from the [baltimore city website](http://gisdata.baltimorecity.gov/) and I found that each block was defined as a street block.[An example of a cityblock pulled from dataset](../Plots/random_block.png)
 
 ##Analysis
+###Checking for Spatial correlation
+
 Since we have spatial data I ran the both Mantel test[c.f @mantel1] and Moran's I [c.f @moran] to examine if spatial autocorrelation exists in this dataset. Please note that while both test measure spatial autocorrelation, they refer to quite different concepts.
 
 Mantel's test[@mantel1; @mantel] gives correlation between different variables due to their spatial location, that is Mantel's test judges whether closeness in one set of variables is related to closeness in another set of variable. Relating this to our datasetwe can use it to see if samples that are close in terms of their geographic location values are also close in terms of life expectancy values. I.e test if the distance matrix based on life expectancy values is correlated with the distance matrix based on spatial location for the CSA's
@@ -661,7 +670,7 @@ detach("package:dplyr", unload=TRUE)
 setwd(file.path(".."))
 ```
 
-Based on these results, we can reject the null hypothesis that these two matrices, spatial distance and life expectancy distance (2011), are unrelated with alpha = 0.05.  The observed correlation, r = 0.1021, suggests that the matrix entries are positively associated. So smaller differences in life expectancy are generally seen among pairs of CSA's that are close to each other than far from each other. Note that since this test is based on random permutations, the same code will always arrive at the same observed correlation but rarely the same p-value. Furthemore, I ran this test for all four years in the datset set and the conclusions are consistent. If you are interested in the correlation values for those years [here is the code](https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R).
+Based on these results, we can reject the null hypothesis that these two matrices, spatial distance and life expectancy distance (2011), are unrelated with alpha = 0.05.  The observed correlation, r = 0.1271281, suggests that the matrix entries are positively associated. So smaller differences in life expectancy are generally seen among pairs of CSA's that are close to each other than far from each other. Note that since this test is based on random permutations, the same code will always arrive at the same observed correlation but rarely the same p-value. Furthemore, I ran this test for all four years in the datset set and the conclusions are consistent. If you are interested in the correlation values for those years [here is the code](https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R).
 
 Moran's I[@moran] is useful when one wants to know the correlation of a variable with itself through space. I.e., when one wants to know to which extent the occurrence of an event in an areal unit makes it more likely or unlikely the occurrence of an event in a neighboring areal unit. I.e if life expectancy is low in the north does that mean that we likely to see low life expectancy in the same region? Thus the null is the lack of existence of spatial autocorrelation.
 ```{r Moran, echo=FALSE, cache=TRUE, message=FALSE, warning=F}
@@ -675,7 +684,9 @@ diag(csa.dists.inv) <- 0
 ape::Moran.I(mtdata$LifeExp11, csa.dists.inv)
 
 ```
-Based on these results, we can reject the null hypothesis that there is zero spatial autocorrelation present in life expectancy at the 5\% level of significance. For more tests using data from 2011 to 2014 please check [here]((https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R)) 
+Based on these results, we can reject the null hypothesis that there is zero spatial autocorrelation present in life expectancy at the 5\% level of significance. For more tests using data from 2011 to 2014 please check [here]((https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R)).
+
+###Regression Models for spatial data
 
 ## Datasets
 
