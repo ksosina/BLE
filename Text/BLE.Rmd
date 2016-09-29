@@ -689,10 +689,11 @@ Based on these results, we can reject the null hypothesis that there is zero spa
 | Children and Family Health & Well-Being | Has information on life expectancy for 2010 to 2014                                                                                                                                                                     | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/vital_signs/data_downloads/) | Neighborhood level | 2010 - 2014 |
 | BNIA Vital Signs Codebook               | Contain information on short variable names and their corresponding full names, along with their sources for each dataset                                                                                               | Dataset   | [Baltimore city website](https://data.baltimorecity.gov)                                             | Neighborhood level | 2016        |
 | Housing and Community Development       | Has information on the state of households in Baltimore city, viz;Number of Homes Sold,Percentage of Residential Properties that are Vacant and Abandoned,Percent Residential Properties that do Not Receive Mail, etc. | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/vital_signs/data_downloads/) | Neighborhood level | 2010-2014   |
+| BNIA Data linking CSA to Neighborhoods      | Has information on which neighborhoods belong to what CSA. Note that a neighborhood may belong to more than one CSA | Dataset   | [Baltimore Neighborhood Indicators Alliance BNIA-JF](http://bniajfi.org/mapping-resources/) | CSA and Neighborhood level | 2010   |
 
 
 
-```{r version}
+```{r version info}
 devtools::session_info()
 ```
 
