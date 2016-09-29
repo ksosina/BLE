@@ -21,7 +21,14 @@ Census_Blocks_and_NSAs_2010 <- "http://bniajfi.org/wp-content/uploads/2014/04/Ce
 
 #####     All 2010 to 2014 data     #####
 
+# Noticed that demo data for 2010-2014 has only partial info
 Census_Demographics_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/t7sb-aegk/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010_complete <- "https://data.baltimorecity.gov/api/views/cix3-h4cy/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010_and_2012 <- "https://data.baltimorecity.gov/api/views/yp84-wh4q/rows.csv?accessType=DOWNLOAD"
+Census_Demographics_2010_and_2013 <- "https://data.baltimorecity.gov/api/views/7pnq-8ebe/rows.csv?accessType=DOWNLOAD"
+
+
+
 Children_and_Family_Health_Well_Being_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/rtbq-mnni/rows.csv?accessType=DOWNLOAD"
 Housing_and_Community_Development_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/mvvs-32jm/rows.csv?accessType=DOWNLOAD"
 Crime_Safety_2010_to_2014 <- "https://data.baltimorecity.gov/api/views/qmw9-b8ep/rows.csv?accessType=DOWNLOAD"
@@ -43,11 +50,12 @@ if(!file.exists(file.path("..", "Text","codebook.csv"))){
 # data_path <- file.path(".", "Data")
 data_names <- c("census.csv", "child_and_fam_wellbeing.csv", "housing.csv",
                 "crime.csv", "workforce.xlsx", "culture.xlsx", "edu_and_youth.xlsx", 
-                "sustain.xlsx")
+                "sustain.xlsx", "census10.csv", "census12.csv", "census13.csv")
 data_urls <- c(Census_Demographics_2010_to_2014, Children_and_Family_Health_Well_Being_2010_to_2014,
                Housing_and_Community_Development_2010_to_2014, Crime_Safety_2010_to_2014,
                Workforce_and_Economic_Development_2010_to_2014, Arts_and_Culture_2010_to_2014,
-               Education_and_Youth_2010_to_2014, Sustainability_2010_to_2014)
+               Education_and_Youth_2010_to_2014, Sustainability_2010_to_2014, Census_Demographics_2010_complete,
+               Census_Demographics_2010_and_2012, Census_Demographics_2010_and_2013)
 
 
 mapply(function(x,y) {
