@@ -215,6 +215,8 @@ rm(csa, dat.le,data, new_loc, neighbhd_csa, dat1)
 
 #Crime data
 
+
+
 ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
 ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
 
