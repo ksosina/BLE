@@ -7,7 +7,7 @@ sapply(packages, library, character.only = T, quietly = T)
 
 list.files(file.path("raw_data"))
 
-read_csv(file.path("raw_data", "real_property.csv.gz")) -> real_prop
+read_csv(file.path("raw_data", "real_property.csv.gz.gz")) -> real_prop
 names(real_prop)
 
 
@@ -57,7 +57,7 @@ unique(canton[canton$BLOCK == "1840",]$FULLADDR)
 map <- get_map(location = 'Baltimore', zoom = 11)
 p <- ggmap(map)
 
-data <- read_csv(file.path("raw_data", "property.csv"))
+data <- read_csv(file.path("raw_data", "property.csv.gz"))
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 data <- na.omit(data)
 new_loc <-  sapply(data$Location, function(x) {
@@ -91,7 +91,7 @@ detach(real_prop_block)
 
 
 #Load in the data file (could this be done from the downloaded zip file directly?
-data <- read_csv(file.path("raw_data", "property.csv"))
+data <- read_csv(file.path("raw_data", "property.csv.gz"))
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 data <- na.omit(data)
 new_loc <-  sapply(data$Location, function(x) {

@@ -3,7 +3,7 @@ setwd(file.path("Data"))
 #### ID which neighborhoods fall into a CSA
 
 ##Load data from real properties that contains block info
-data <- readr::read_csv(file.path("raw_data", "property.csv"))
+data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 
 data <- na.omit(data)
@@ -153,7 +153,7 @@ health.sub <- subset(health, select = c("CSA", "LifeExp11",
 
 
 inner_join(health.sub, neighbhd_csa) %>% #This will have the same number of rows as neighbhd_csa since block neighborhood combinations are unique
-  inner_join(dat1) -> merged.h_n         #This will have more rows since dat1 each block in property.csv has multiple streets
+  inner_join(dat1) -> merged.h_n         #This will have more rows since dat1 each block in property.csv.gz has multiple streets
 
 # Mantel's Test
 #we need CSA to be unique so get the median longitude and latitude per CSA
