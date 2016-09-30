@@ -58,7 +58,7 @@ rm(census10.12, census10.13, census10.14, c1,c2,c3,c4)
 #### ID which neighborhoods fall into a CSA
 
 ##Load data from real properties that contains block info
-data <- readr::read_csv(file.path("raw_data", "property.csv"))
+data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
 dat1 <- subset(data, select = names(data)[c(2:3,6,8,9,11,13:15)])
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 
@@ -207,7 +207,117 @@ health.sub <- subset(health, select = c("CSA", "LifeExp11",
 
 #This will have the same number of rows as csa.prop since block neighborhood combinations are unique
 inner_join(csa.prop, health.sub) -> csa.prop.health  
+
+
 rm(csa, dat.le,data, new_loc, neighbhd_csa, dat1)
+
+#Crime data
+
+
+ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
+ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
+
+if(!file.exists( file.path(".","wip", ifiles.name ) )){
+  dir.create(file.path(".","wip", ifiles.name ))
+  unzip(file.path(".","raw_data", "census_blk.zip"), 
+        files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
+} 
+
+##Load data from crime data that contains street,Neighborhood and Police District info
+
+data <- readr::read_csv(file.path("raw_data", "street_crime.csv.gz"))
+names(data)[c(4,11)] <- c("Street",names(data)[4])
+dat1 <- data #subset(data, select = -Location)
+subset(data, select = c("Street", "Neighborhood", "Location", "District")) -> data
+
+data <- data[!is.na(data$Location),]
+
+new_loc <-  sapply(data$Location, function(x) {
+  y <- substr(x, start = 2, stop = nchar(x) - 1)
+  strsplit(y, ", ")[[1]]
+}
+)
+new_loc <- t(new_loc)
+
+#side note. Records have been geocoded to the hundredth block and not the precise point that the crime took place.
+data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+dat1$lon <- NA;dat1$lat <- NA
+dat1[!is.na(dat1$Location),][,-11] <- data.frame(dat1[!is.na(dat1$Location),][,-c(11,13,14)],
+                                               lon = as.numeric(new_loc[,2]), 
+                                               lat = as.numeric(new_loc[,1]))
+dat1 <- subset(dat1, select = -Location)
+
+#Step 1
+### Check if Lng and Lat fall inside polygons from ESRI Shape file for Child and wellbeing (this has the outcome)
+dat.le <-  rgdal::readOGR(file.path("wip", "blk2010"), "blk2010")
+block <- as.character(dat.le$BLOCK)
+dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
+
+
+# Assignment modified according
+sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
+
+# Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
+sp::proj4string(data) <- sp::proj4string(dat.le)
+
+sp::over(dat.le, data, returnList = T) -> block_crime #gives which Neighborhood belongs to what crime block
+
+
+unlink(file.path("wip", "blk2010"), force = T, recursive = T)
+
+
+names(block_crime) <- block
+
+#Gives a dataframe with cols Block, Neighborhood and street 
+block_crime <- plyr::ldply (block_crime, data.frame) 
+clnames <- names(block_crime)
+clnames[1] <- "Block"
+names(block_crime) <- clnames
+block_crime$Neighborhood <- toupper(block_crime$Neighborhood)
+
+block_crime <- subset(plyr::arrange(block_crime, Neighborhood, Block, Street), select = c(Neighborhood, Block, Street)) 
+block_crime <- unique(block_crime)
+
+
+#Step 2
+##Load data from real properties that contains block info
+data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
+subset(data, select = c("Block", "Neighborhood", "Location")) -> data
+
+data <- na.omit(data)
+
+new_loc <-  sapply(data$Location, function(x) {
+  y <- substr(x, start = 2, stop = nchar(x) - 1)
+  strsplit(y, ", ")[[1]]
+}
+)
+new_loc <- t(new_loc)
+data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+
+# Assignment modified according
+sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
+
+# Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
+sp::proj4string(data) <- sp::proj4string(dat.le)
+
+sp::over(dat.le, data, returnList = T) -> block_prop  #gives which Neighborhood-block belongs to what real property Neighbhd-block
+
+names(block_prop) <- block
+
+#Gives a dataframe with cols Block, Neighborhood and street 
+block_prop <- plyr::ldply (block_prop, data.frame) 
+clnames <- names(block_prop)
+clnames[1] <- "Blocks"
+names(block_prop) <- clnames
+block_prop$Neighborhood <- toupper(block_prop$Neighborhood)
+
+block_prop <- subset(plyr::arrange(block_prop, Neighborhood, Blocks, Block), select = c(Neighborhood, Blocks, Block)) 
+block_prop <- unique(block_prop)
+
+
+rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
+
+
 #Interesting not relevant yet
 
 # # Use 'acs' package
