@@ -117,6 +117,96 @@ inner_join(neighbhd_csa, dat1) %>%
 
 pryr::object_size(csa.prop)
 
+
+#Outcome data
+
+
+health <- readr::read_csv(file.path(".", "raw_data", "child_and_fam_wellbeing.csv"))
+clnames <- names(health)
+clnames[1] <- "CSA"
+names(health) <- clnames
+
+
+gsub("_[[:digit:]]*","",names(health))[-1] -> variables
+variables[variables == "mort1"] <- "mort01"
+variables <- sapply(variables, function(x){
+  substr(x, start = 1, stop = nchar(x) - 2)
+})
+unname(variables) -> variables
+unique(variables) -> var.names
+
+setdiff(names(health), grep(paste0("mort"), names(health), value = T)) ->rm.mort
+
+#Change from short to long
+
+health.long <- lapply(var.names[var.names!= "mort"], function(x){
+  #get the columns
+  columns <- grep(paste0(x),rm.mort, value = T)
+  
+  #get the time in years
+  time <- sapply(gsub("[^_[:digit:]]","",columns), function(x){
+    substr(x, start = nchar(x)-1, stop = nchar(x))
+  }
+  )
+  unname(time) -> time
+  
+  #Select the columns
+  subset(health, select = c("CSA",columns)) -> dat.h
+  
+  n <- dim(dat.h)[1]
+  
+  # print(length(time))
+  dat.h <- tidyr::gather(dat.h, variable, value, -CSA)
+  dat.h$time <- rep(as.numeric(time), each = n)
+  dat.h
+  # data.frame(tidyr::gather(dat.h, variable, value, -CSA), time = time)
+  # rbind(cbind(tidyr::gather(dat.h, variable, value, -CSA), time))
+  
+})
+
+plyr::ldply(health.long, data.frame) -> health.long
+
+
+#get the columns
+columns <-  sapply(strsplit(grep(paste0("mort"),names(health), value = T),"_"),function(x) x[1])
+unique(columns) -> columns
+
+health.long2 <- lapply(columns, function(x){
+  
+  #get the time in years
+  time <- sapply(strsplit(grep(paste0("^", x, "_"),
+                               names(health), value = T),"_"),function(x) x[2])
+  time <- as.numeric(time)
+  
+  #Select the columns
+  subset(health, select = c("CSA",
+                            grep(paste0("^", x, "_"), names(health), value = T))
+  ) -> dat.h
+  
+  n <- dim(dat.h)[1]
+  
+  # print(length(time))
+  dat.h <- tidyr::gather(dat.h, variable, value, -CSA)
+  dat.h$time <- rep(as.numeric(time), each = n)
+  dat.h
+  # data.frame(tidyr::gather(dat.h, variable, value, -CSA), time = time)
+  # rbind(cbind(tidyr::gather(dat.h, variable, value, -CSA), time))
+  
+})
+
+plyr::ldply(health.long2, data.frame) -> health.long2
+
+health.long <- rbind(health.long, health.long2)
+
+rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
+
+#Merge
+health.sub <- subset(health, select = c("CSA", "LifeExp11", 
+                                        "LifeExp12", "LifeExp13",
+                                        "LifeExp14"))
+
+#This will have the same number of rows as csa.prop since block neighborhood combinations are unique
+inner_join(csa.prop, health.sub) -> csa.prop.health  
 rm(csa, dat.le,data, new_loc, neighbhd_csa, dat1)
 #Interesting not relevant yet
 
