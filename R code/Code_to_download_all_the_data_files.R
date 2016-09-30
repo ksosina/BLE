@@ -136,7 +136,7 @@ mapply(function(x,y) {
 ###   Extract the zip files   ###
 
 ##All except neighbour and block data
-sapply(data_names, function(x){
+sapply(data_names[1:8], function(x){
   if(!file.exists("wip")){
     dir.create("wip")
   }
