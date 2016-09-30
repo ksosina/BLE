@@ -186,10 +186,10 @@ ggsave(filename = file.path("..", "Plots",
        width = 45, height = 45, units = "cm",
        dpi = 300)
 
-sapply(list.files(file.path("wip", "blk2010"), full.names = T), function(x)
-  {
-  system(paste("rm", x))
-})
+# sapply(list.files(file.path("wip", "blk2010"), full.names = T), function(x)
+#   {
+#   system(paste("rm", x))
+# })
 unlink(file.path("wip", "blk2010"), force = T, recursive = T)
 
 #Delet unzipped fies since they become too large to push

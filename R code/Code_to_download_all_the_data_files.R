@@ -184,7 +184,7 @@ sapply(shape_dirs, function(x){
 #Block data
 ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
 ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
-if(!file.exists( file.path(".","wip", ifiles.name ) )){
+if(!file.exists( file.path(".","wip", ifiles.name ) ) & length(list.files(file.path("..","Plots"))) == 0){
   dir.create(file.path(".","wip", ifiles.name ))
   unzip(file.path(".","raw_data", "census_blk.zip"), 
         files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
