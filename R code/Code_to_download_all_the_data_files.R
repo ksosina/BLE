@@ -205,6 +205,6 @@ if(!file.exists( file.path(".","wip", ifiles.name ) )){
 
 
 
-
+rm(list = ls())
 
 setwd(file.path(".."))
