@@ -48,6 +48,19 @@ references:
   issued:
     year: 1966
     month: 9
+- id: fother
+  title: "Geographically Weighted Regression: The Analysis of Spatially Varying Relationships"
+  author:
+  - family: Fotheringham
+    given: "A. Stewart"
+  - family: Brunsdon
+    given: "Chris"
+  - family: Charlton
+    given: "Martin"
+  container-title: " Wiley"
+  type: Book
+  issued:
+    year: 2002
 ---
 
 ```{r setup, include=FALSE}
@@ -56,7 +69,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Goal: To develop a model for predicting life expectancy in Baltimore down to single block resolution with estimates of uncertainty. **You may need to develop an approach for “downsampling” since the outcome data you’ll be able to find is likely aggregated at the neighborhood level**
+Goal: To develop a model for predicting life expectancy in Baltimore down to single block resolution with estimates of uncertainty. **You may need to develop an approach for “downscaling” since the outcome data you’ll be able to find is likely aggregated at the neighborhood level**
 
 ```{r housekeeping, include=FALSE, message=FALSE, eval=T}
 # d <- getwd()
@@ -687,6 +700,23 @@ ape::Moran.I(mtdata$LifeExp11, csa.dists.inv)
 Based on these results, we can reject the null hypothesis that there is zero spatial autocorrelation present in life expectancy at the 5\% level of significance. For more tests using data from 2011 to 2014 please check [here]((https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R)).
 
 ###Regression Models for spatial data
+####Geographically Weighted Regression (GWR)
+* The structure of the model does not remain constant over the study area (there are local variations in the parameter estimates)
+* To account for this potential spatial heterogeneity we use the GWR model [@fother]
+* GWR permits the parameter estimates to vary locally.
+
+#####GWR
+This model uses a weighted least squares approach to account for spatial heteorgeniety and is as follows $$Y_i = X\beta_i + \epsilon_i $$ where i is the location and $\beta_i$ is solved using the WLS approach. Thus $$ \beta_i = (X^TW_iX)^{-1}X^TW_iY $$ where $W_i$ is the weight matrix 
+
+####Methods for Downscaling
+* Delta method:
+Here, after we find the model that fits the date best, using aggregated data. 
+    1. We then predict what the outcome would be after we remove one of the blocks from the aggregated data, call this $$ T_{-b} = E(Y)_{-b} $$ 
+    2. Then find the delta in predicted life expectancy due to the removed block as $$ T_{\delta_b} = T_{full} – T_{-b} $$
+    3. Add the delta to the observed outcome at that location.
+
+* Transfer function: Find which aggregated predictors provide the best fit, then use a "transfer function" to map the aggregated variables to the block level and use the value gotten as a predictor to get block level estimates.
+ 
 
 ## Datasets
 
