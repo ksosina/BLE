@@ -274,17 +274,18 @@ names(block_crime) <- block
 #Gives a dataframe with cols Block, Neighborhood and street 
 block_crime <- plyr::ldply (block_crime, data.frame) 
 clnames <- names(block_crime)
-clnames[1] <- "Block"
+clnames[1] <- "Blocks"
 names(block_crime) <- clnames
 block_crime$Neighborhood <- toupper(block_crime$Neighborhood)
 
-block_crime <- subset(plyr::arrange(block_crime, Neighborhood, Block, Street), select = c(Neighborhood, Block, Street)) 
+block_crime <- subset(plyr::arrange(block_crime, Neighborhood, Blocks, Street), select = c(Neighborhood, Blocks, Street)) 
 block_crime <- unique(block_crime)
 
 
 #Step 2
 ##Load data from real properties that contains block info
 data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
+dat2 <- subset(data, select = names(data)[c(2:3,6,8,9,11,13:15)])
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 
 data <- na.omit(data)
@@ -296,6 +297,11 @@ new_loc <-  sapply(data$Location, function(x) {
 )
 new_loc <- t(new_loc)
 data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+
+dat2$lon <- NA;dat2$lat <- NA
+dat2[!is.na(dat2$Neighborhood),] <- data.frame(dat2[!is.na(dat2$Neighborhood),][,1:9],
+                                               lon = as.numeric(new_loc[,2]), 
+                                               lat = as.numeric(new_loc[,1]))
 
 # Assignment modified according
 sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
@@ -320,6 +326,26 @@ block_prop <- unique(block_prop)
 
 rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
 
+# Get which block numeration corresponds to street block in real_prop taxes
+dplyr::inner_join(block_crime,block_prop) -> block_crime_pop
+
+dat1$Neighborhood <- toupper(dat1$Neighborhood)
+
+## Need you need to summarize otherwise the vanilla form is ~7.9 GB
+block_crime_pop %>% 
+  inner_join(dat1[,-c(12,13)]) %>% #Removing lon and lat since it is approximate for crime data
+  inner_join(dat2) %>%
+  mutate(CityTax = gsub("\\$", "", CityTax), CityTax = as.numeric(CityTax),
+         StateTax = gsub("\\$", "", StateTax), StateTax = as.numeric(StateTax),
+         AmountDue = gsub("\\$", "", AmountDue), AmountDue = as.numeric(AmountDue), 
+         TotalIncidents = as.numeric(`Total Incidents`)) %>%
+  group_by(Neighborhood, Block) %>% 
+  summarise(TotalIncidents = sum(TotalIncidents, na.rm = T),
+            mean(CityTax, na.rm = T),
+            mean(StateTax, na.rm = T),
+            mean(AmountDue, na.rm = T),
+            median(lon, na.rm = T),
+            median(lat, na.rm = T)) -> block_crime_pop
 
 #Interesting not relevant yet
 
