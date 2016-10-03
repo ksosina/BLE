@@ -19,6 +19,7 @@ Real_Property <- "http://gisdata.baltimorecity.gov/datasets/b41551f53345445fa05b
 CSA_to_NSA_2010 <- "http://bniajfi.org/wp-content/uploads/2014/04/CSA-to-NSA-2010.xlsx"
 Census_Blocks_and_NSAs_2010 <- "http://bniajfi.org/wp-content/uploads/2014/04/Census-Blocks-and-NSAs-2010.xlsx"
 BPD_Part_1_Victim_Based_Crime_Data <- "https://data.baltimorecity.gov/api/views/wsfq-mvij/rows.csv?accessType=DOWNLOAD"
+Vacant_Buildings <- "https://data.baltimorecity.gov/api/views/qqcv-ihn5/rows.csv?accessType=DOWNLOAD"
 
 #####     All 2010 to 2014 data     #####
 
@@ -72,14 +73,14 @@ mapply(function(x,y) {
 
 #####     2 Data that could ID Blocks within a Neighbourhood     #####
 data_names <- c("csa_nsa.xlsx", "blocks_nsa.xlsx","property.csv", "parks.csv", "religious.csv",
-                "libraries.csv", "cust_311.csv", "real_property.csv","street_crime.csv") 
+                "libraries.csv", "cust_311.csv", "real_property.csv","street_crime.csv", "vacants.csv") 
 
 #cust_311 has zip, address and neighbourhood
 
 data_urls <- c(CSA_to_NSA_2010,Census_Blocks_and_NSAs_2010,
                Real_Property_Taxes, Parks, Religious_Buildings, 
                Libraries, Customer_Service_Requests_311,Real_Property,
-               BPD_Part_1_Victim_Based_Crime_Data)
+               BPD_Part_1_Victim_Based_Crime_Data, Vacant_Buildings)
 
 
 mapply(function(x,y) {
@@ -88,7 +89,7 @@ mapply(function(x,y) {
   }
   v <- list.files(file.path(".", "raw_data"), pattern = "*.csv")
   lv <- length(v)
-  if(!file.exists(file.path(".", "raw_data",y)) & lv < 14){
+  if(!file.exists(file.path(".", "raw_data",y)) & lv < 15){
     download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
     date_downloaded <- now()
     write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
