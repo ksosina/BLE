@@ -327,11 +327,13 @@ block_prop <- unique(block_prop)
 rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
 
 # Get which block numeration corresponds to street block in real_prop taxes
+
 dplyr::inner_join(block_crime,block_prop) -> block_crime_pop
 
 dat1$Neighborhood <- toupper(dat1$Neighborhood)
 
-## Need you need to summarize otherwise the vanilla form is ~7.9 GB
+## Need to summarize otherwise the vanilla form is ~7.9 GB
+
 block_crime_pop %>% 
   inner_join(dat1[,-c(12,13)]) %>% #Removing lon and lat since it is approximate for crime data
   inner_join(dat2) %>%
@@ -346,6 +348,67 @@ block_crime_pop %>%
             mean(AmountDue, na.rm = T),
             median(lon, na.rm = T),
             median(lat, na.rm = T)) -> block_crime_pop
+
+#Step 3
+##Load data from real properties that contains block info
+data <- readr::read_csv(file.path("raw_data", "vacants.csv"))
+dat3 <- subset(data, select = names(data)[c(2,4:6)])
+subset(data, select = c("BuildingAddress", "Neighborhood", "Location")) -> data
+
+data <- na.omit(data)
+
+new_loc <-  sapply(data$Location, function(x) {
+  y <- substr(x, start = 2, stop = nchar(x) - 1)
+  strsplit(y, ", ")[[1]]
+}
+)
+new_loc <- t(new_loc)
+data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+
+dat3$lon <- NA;dat3$lat <- NA
+data.frame(dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood) ,][,1:4],
+                                               lon = as.numeric(new_loc[,2]), 
+                                               lat = as.numeric(new_loc[,1])) -> dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood),]
+
+#Convert Noticedate to date obj and then extract the year
+dat3 %>% 
+  mutate(NoticeDate =  year(as.Date(NoticeDate, "%d/%m/%Y")),Neighborhood = toupper(Neighborhood)) -> dat3
+
+# Assignment modified according
+sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
+
+# Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
+sp::proj4string(data) <- sp::proj4string(dat.le)
+
+sp::over(dat.le, data, returnList = T) -> block_vac  #gives which Neighborhood-block belongs to what vacant property Neighbhd-block
+
+
+names(block_vac) <- block
+
+#Gives a dataframe with cols Block, Neighborhood and street 
+block_vac <- plyr::ldply (block_vac, data.frame) 
+clnames <- names(block_vac)
+clnames[1] <- "Blocks"
+names(block_vac) <- clnames
+block_vac$Neighborhood <- toupper(block_vac$Neighborhood)
+
+block_vac <- subset(plyr::arrange(block_vac, Neighborhood, Blocks, BuildingAddress), select = c(Neighborhood, Blocks, BuildingAddress)) 
+block_vac <- unique(block_vac)
+
+# Get which block numeration corresponds to street block in real_prop taxes
+
+#Join to real_property taxes dataset by Neighbourhood and block(numerical) to get which street and Neighbourhood correspond to what 
+  #to what Neighbourhood and block in real_property taxes
+
+dplyr::inner_join(block_vac,block_prop) -> block_vac_pop 
+
+block_vac_pop %>% 
+  inner_join(dat3, by  = c("Neighborhood", "BuildingAddress")) %>% #Join to vacant_building dataset by street and neighbourhood
+  group_by(Neighborhood, Block = Block.x, Year = NoticeDate) %>% #Group by Neighbourhood, block and year to obtain summary stats
+  summarise(Count_vancant = length(BuildingAddress)) %>%
+  filter(!is.na(Year)) -> block_vac_pop #Remove NA tags. This NA tags represents vacancy but for unknown years
+
+rm(dat.le,dat1, dat2, dat3, block)
 
 #Interesting not relevant yet
 
