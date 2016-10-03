@@ -710,14 +710,10 @@ This model uses a weighted least squares approach to account for spatial heteorg
 
 ####Methods for Downscaling
 * Delta method:
-<<<<<<< HEAD
 Here, after we find the model that fits the date best, using aggregated data. 
     1. We then predict what the outcome would be after we remove one of the blocks from the aggregated data, call this $$ T_{-b} = E(Y)_{-b} $$ 
-    2. Then find the delta in predicted life expectancy due to the removed block as $$ T_{\delta_b} = T_{full} – T_{-b} $$
-    3. Add the delta to the observed outcome at that location.
-=======
-Here, after we find the model that fits the date best, using aggregated data. We then predict what the outcome would be after we remove one of the blocks from the aggregated data, call this $$ T_{-b} = E(Y)_{-b} $$ and then find the predicted life expectancy for the removed block as $$ T_{b} = T_{full} – T_{-b} $$
->>>>>>> 7f3e3f6212d33bd9faf1307ed5d48ac24dd669f9
+    2. Then find the delta in predicted life expectancy due to the removed block as $$ T_{\delta_b} = T_{full} – T_{-b} $$ Call this delta the mean life expectancy for that block.
+    <!-- 3. Add the delta to the observed outcome at that location. -->
 
 * Transfer function: Find which aggregated predictors provide the best fit, then use a "transfer function" to map the aggregated variables to the block level and use the value gotten as a predictor to get block level estimates.
  
