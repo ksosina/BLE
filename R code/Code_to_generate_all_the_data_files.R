@@ -13,7 +13,7 @@ names(census10)[15] <- "age44_10"
 names(census10.13)[1] <- names(census10.14)[1]
 
 #Second merging datasets
-library(dplyr)
+library(dplyr);library(lubridate)
 
 #I noticed that some variables have * in front of each figure for hhs10 and mhhi13 in census10.13 so I will replace em
 census10.13 %>% arrange_(.dots=names(census10.13)[1:20]) %>%
@@ -231,7 +231,7 @@ if(!file.exists( file.path(".","wip", ifiles.name ) )){
 data <- readr::read_csv(file.path("raw_data", "street_crime.csv.gz"))
 names(data)[c(4,11)] <- c("Street",names(data)[4])
 dat1 <- data #subset(data, select = -Location)
-subset(data, select = c("Street", "Neighborhood", "Location", "District")) -> data
+subset(data, select = c("Street", "Neighborhood", "Location", "CrimeDate")) -> data
 
 data <- data[!is.na(data$Location),]
 
@@ -243,7 +243,7 @@ new_loc <-  sapply(data$Location, function(x) {
 new_loc <- t(new_loc)
 
 #side note. Records have been geocoded to the hundredth block and not the precise point that the crime took place.
-data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+data <- data.frame(data[,c(1,2, 4)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
 dat1$lon <- NA;dat1$lat <- NA
 dat1[!is.na(dat1$Location),][,-11] <- data.frame(dat1[!is.na(dat1$Location),][,-c(11,13,14)],
                                                lon = as.numeric(new_loc[,2]), 
@@ -278,7 +278,11 @@ clnames[1] <- "Blocks"
 names(block_crime) <- clnames
 block_crime$Neighborhood <- toupper(block_crime$Neighborhood)
 
-block_crime <- subset(plyr::arrange(block_crime, Neighborhood, Blocks, Street), select = c(Neighborhood, Blocks, Street)) 
+block_crime <- block_crime %>% 
+  mutate(year = year(as.Date(CrimeDate, "%m/%d/%Y")))
+block_crime <- subset(plyr::arrange(block_crime, Neighborhood, Blocks, year, Street, CrimeDate), 
+                      select = c(Neighborhood, Blocks, year, Street, CrimeDate)) 
+
 block_crime <- unique(block_crime)
 
 
@@ -324,8 +328,6 @@ block_prop <- subset(plyr::arrange(block_prop, Neighborhood, Blocks, Block), sel
 block_prop <- unique(block_prop)
 
 
-rm(health.long2, columns, rm.mort, var.names, variables, new_loc)
-
 # Get which block numeration corresponds to street block in real_prop taxes
 
 dplyr::inner_join(block_crime,block_prop) -> block_crime_pop
@@ -336,12 +338,12 @@ dat1$Neighborhood <- toupper(dat1$Neighborhood)
 
 block_crime_pop %>% 
   inner_join(dat1[,-c(12,13)]) %>% #Removing lon and lat since it is approximate for crime data
-  inner_join(dat2) %>%
+  inner_join(dat2[,c(1,4:7, 10:11)]) %>%
   mutate(CityTax = gsub("\\$", "", CityTax), CityTax = as.numeric(CityTax),
          StateTax = gsub("\\$", "", StateTax), StateTax = as.numeric(StateTax),
          AmountDue = gsub("\\$", "", AmountDue), AmountDue = as.numeric(AmountDue), 
          TotalIncidents = as.numeric(`Total Incidents`)) %>%
-  group_by(Neighborhood, Block) %>% 
+  group_by(Neighborhood, Block, year) %>% 
   summarise(TotalIncidents = sum(TotalIncidents, na.rm = T),
             mean(CityTax, na.rm = T),
             mean(StateTax, na.rm = T),
@@ -353,7 +355,7 @@ block_crime_pop %>%
 ##Load data from real properties that contains block info
 data <- readr::read_csv(file.path("raw_data", "vacants.csv"))
 dat3 <- subset(data, select = names(data)[c(2,4:6)])
-subset(data, select = c("BuildingAddress", "Neighborhood", "Location")) -> data
+subset(data, select = c("BuildingAddress", "Neighborhood", "Location", "NoticeDate")) -> data
 
 data <- na.omit(data)
 
@@ -372,7 +374,7 @@ data.frame(dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood) ,][,1:4
 
 #Convert Noticedate to date obj and then extract the year
 dat3 %>% 
-  mutate(NoticeDate =  year(as.Date(NoticeDate, "%d/%m/%Y")),Neighborhood = toupper(Neighborhood)) -> dat3
+  mutate(year =  year(as.Date(NoticeDate, "%m/%d/%Y")),Neighborhood = toupper(Neighborhood)) -> dat3
 
 # Assignment modified according
 sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
@@ -392,7 +394,8 @@ clnames[1] <- "Blocks"
 names(block_vac) <- clnames
 block_vac$Neighborhood <- toupper(block_vac$Neighborhood)
 
-block_vac <- subset(plyr::arrange(block_vac, Neighborhood, Blocks, BuildingAddress), select = c(Neighborhood, Blocks, BuildingAddress)) 
+block_vac <- subset(plyr::arrange(block_vac, Neighborhood, Blocks, BuildingAddress, NoticeDate), 
+                    select = c(Neighborhood, Blocks, BuildingAddress, NoticeDate)) 
 block_vac <- unique(block_vac)
 
 # Get which block numeration corresponds to street block in real_prop taxes
@@ -403,12 +406,13 @@ block_vac <- unique(block_vac)
 dplyr::inner_join(block_vac,block_prop) -> block_vac_pop 
 
 block_vac_pop %>% 
-  inner_join(dat3, by  = c("Neighborhood", "BuildingAddress")) %>% #Join to vacant_building dataset by street and neighbourhood
-  group_by(Neighborhood, Block = Block.x, Year = NoticeDate) %>% #Group by Neighbourhood, block and year to obtain summary stats
-  summarise(Count_vancant = length(BuildingAddress)) %>%
-  filter(!is.na(Year)) -> block_vac_pop #Remove NA tags. This NA tags represents vacancy but for unknown years
+  inner_join(dat3, by  = c("Neighborhood", "BuildingAddress", "NoticeDate")) %>% #Join to vacant_building dataset by street, nbhd, and date
+  group_by(Neighborhood, Block = Block.x, Year = year) %>% #Group by Neighbourhood, block and year to obtain summary stats
+  summarise(Count_vancant = length(BuildingAddress)) -> block_vac_pop #Remove NA tags. This NA tags represents vacancy but for unknown years
 
-rm(dat.le,dat1, dat2, dat3, block)
+rm(dat.le,dat1, dat2, dat3, block, 
+   new_loc, ifiles, ifiles.name,clnames, data)
+
 
 #Interesting not relevant yet
 
@@ -431,5 +435,6 @@ rm(dat.le,dat1, dat2, dat3, block)
 
 
 detach("package:dplyr", unload=TRUE)
+detach("package:lubridate", unload=TRUE)
 
 setwd(file.path(".."))
