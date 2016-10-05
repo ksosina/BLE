@@ -365,7 +365,7 @@ new_loc <-  sapply(data$Location, function(x) {
 }
 )
 new_loc <- t(new_loc)
-data <- data.frame(data[,c(1,2)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
+data <- data.frame(data[,c(1,2, 4)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
 
 dat3$lon <- NA;dat3$lat <- NA
 data.frame(dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood) ,][,1:4],
@@ -414,6 +414,66 @@ rm(dat.le,dat1, dat2, dat3, block,
    new_loc, ifiles, ifiles.name,clnames, data)
 
 
+##For block_crime_pop and block_vac_pop, I want the "years' variable to rep all the possible years between 2010 and 2016
+block_crime_pop -> block_crime_pop1
+block_crime_pop1 %>% 
+  select(Neighborhood, Block) %>%
+  unique() -> block_crime_pop1
+
+block_crime_pop1[rep(seq_len(nrow(block_crime_pop1)), each=5),] -> block_crime_pop1
+
+block_crime_pop1$year <- rep(c(2010:2014), n_distinct(block_crime_pop1))
+
+names(block_crime_pop) <- c(names(block_crime_pop)[1:4], "CityTax.avg",
+                            "StateTax.avg", "AmountDue.avg",
+                            "lon.med", "lat.med")
+
+block_crime_pop1 %>% 
+  left_join(block_crime_pop) -> crime_pop 
+  # mutate(TotalIncidents = ifelse(is.na(TotalIncidents), 0, TotalIncidents),
+  #        CityTax.avg = ifelse(is.na(CityTax.avg), 0, CityTax.avg),
+  #        StateTax.avg = ifelse(is.na(StateTax.avg), 0, StateTax.avg),
+  #        AmountDue.avg = ifelse(is.na(AmountDue.avg), 0, AmountDue.avg) ) -> crime_pop
+crime_pop_impute <- crime_pop %>%
+  subset(select = -Block) %>%
+  group_by(Neighborhood, year) %>%
+  summarise_all(mean, na.rm = T)
+# Impute neighbourhood average for the particular year
+attach(crime_pop)
+crime_pop[is.na(TotalIncidents), ][,c(1,3)] %>%
+  inner_join(crime_pop_impute) -> crime_pop[is.na(TotalIncidents), ][,-2]
+crime_pop[is.na(CityTax.avg), ][,c(1,3)] %>%
+  inner_join(crime_pop_impute) -> crime_pop[is.na(CityTax.avg), ][,-2]
+crime_pop[is.na(StateTax.avg), ][,c(1,3)] %>%
+  inner_join(crime_pop_impute) -> crime_pop[is.na(StateTax.avg), ][,-2]
+crime_pop[is.na(AmountDue.avg), ][,c(1,3)] %>%
+  inner_join(crime_pop_impute) -> crime_pop[is.na(AmountDue.avg), ][,-2]
+
+#After imputation some years just have missing info
+crime_pop %>%
+  mutate(TotalIncidents = ifelse(is.na(TotalIncidents), 0, TotalIncidents),
+         CityTax.avg = ifelse(is.na(CityTax.avg), 0, CityTax.avg),
+         StateTax.avg = ifelse(is.na(StateTax.avg), 0, StateTax.avg),
+         AmountDue.avg = ifelse(is.na(AmountDue.avg), 0, AmountDue.avg) ) -> crime_pop
+
+detach(crime_pop)
+
+block_vac_pop -> block_vac_pop1
+block_vac_pop1 %>% 
+  select(Neighborhood, Block) %>%
+  unique() -> block_vac_pop1
+
+block_vac_pop1[rep(seq_len(nrow(block_vac_pop1)), each=5),] -> block_vac_pop1
+
+block_vac_pop1$Year <- rep(c(2010:2014), n_distinct(block_vac_pop1))
+
+names(block_vac_pop) <- c(names(block_vac_pop)[1:3], "Count_vacant")
+
+block_vac_pop1 %>% 
+  left_join(block_vac_pop)  -> vac_pop
+vac_pop$Count_vacant <- ifelse(is.na(vac_pop$Count_vacant), 0, vac_pop$Count_vacant)
+
+rm(block_crime_pop1, block_vac_pop1,block_crime_pop, block_vac_pop)
 #Interesting not relevant yet
 
 # # Use 'acs' package
