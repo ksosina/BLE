@@ -58,7 +58,13 @@ rm(census10.12, census10.13, census10.14, c1,c2,c3,c4)
 #### ID which neighborhoods fall into a CSA
 
 ##Load data from real properties that contains block info
+
 data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
+
+#get count of houses per block
+data %>% group_by(Neighborhood,Block) %>%
+  summarise(count_house = n()) -> houses
+
 dat1 <- subset(data, select = names(data)[c(2:3,6,8,9,11,13:15)])
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 
@@ -474,24 +480,90 @@ block_vac_pop1 %>%
 vac_pop$Count_vacant <- ifelse(is.na(vac_pop$Count_vacant), 0, vac_pop$Count_vacant)
 
 rm(block_crime_pop1, block_vac_pop1,block_crime_pop, block_vac_pop)
-#Interesting not relevant yet
+rm(block_crime, block_prop, block_vac, crime_pop_impute, csa.prop)
 
-# # Use 'acs' package
-# # Get place or county name for baltimore city 
-# View(fips.place[fips.place$STATE=="MD",])
-# 
-# #view couty sub division for baltimore city
-# View(fips.county.subdivision[fips.county.subdivision$STATE=="MD",])
-# 
-# #make geo location for acs.fetch
-# acs::geo.make(state = "MD", 
-#               county = "Baltimore city", 
-#               tract = "*") -> place
-# api.key.install(key ="")
-# acs.fetch(2014,geography = place, 
-#           keyword = "male", 
-#           case.sensitive = F,
-#           col.names = "pretty") ->acs.data
+
+
+
+##Create analyses data
+
+names(csa.prop.health) <- tolower(names(csa.prop.health))
+names(vac_pop) <- tolower(names(vac_pop))
+names(crime_pop) <- tolower(names(crime_pop)) #Note that lat and lon here refer to that gotten from real_prop data
+names(houses) <- tolower(names(houses))
+# crime_pop[crime_pop$year == 2014,]
+
+csa.prop.health[,c(1:3, 12)] %>% 
+  left_join(subset(crime_pop, year == 2014, select = -c(lon.med, lat.med))) %>%
+  left_join(subset(vac_pop, year == 2014)) %>%
+  mutate(count_vacant = as.numeric(ifelse(is.na(count_vacant), 0, count_vacant)))-> health_prop_le_crime_vac_block
+
+health_prop_le_crime_vac_block %>%
+  inner_join(houses) %>%
+  mutate(prop.vacant = count_vacant/count_house) -> health_prop_le_crime_vac_block
+
+#For any variables that are NA use the neighbourhood average of the csa they belong to for imputation
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -lifeexp14) %>%
+  group_by(csa, neighborhood) %>%
+  summarise( totalincidents = mean(totalincidents, na.rm = T),
+             citytax.avg = mean(citytax.avg, na.rm = T),
+             statetax.avg = mean(statetax.avg, na.rm = T),
+             amountdue.avg = mean(amountdue.avg, na.rm = T),
+             prop.vacant = mean(prop.vacant, na.rm = T)) -> impute
+
+health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents), c(1:4)] %>%
+  inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
+rm(impute)
+
+#Aggregate by CSA 
+
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -neighborhood) %>%
+  filter(!is.nan(totalincidents)) %>%
+  # mutate(count_vacant = as.numeric(count_vacant)) %>%
+  group_by(csa) %>%
+  summarise_all(mean) -> csa.data
+
+census12_14 %>% select(csa = CSA2010, tpop = tpop10, racdiv10,mhhi13, femhhs10) %>% 
+  inner_join(csa.data) %>%
+  subset(select = (c(csa, lifeexp14, tpop, 
+                     racdiv10, mhhi13, femhhs10, 
+                     totalincidents, citytax.avg, 
+                     statetax.avg, amountdue.avg, 
+                     prop.vacant ))) -> csa.data
+
+housing <- readr::read_csv(file.path("raw_data", "housing.csv"))
+edu <- readxl::read_excel(file.path("raw_data", "edu_and_youth.xlsx"))
+welfare <- readr::read_csv(file.path("raw_data", "child_and_fam_wellbeing.csv"))
+sustain <- readxl::read_excel(file.path("raw_data", "sustain.xlsx"))
+crime <- readr::read_csv(file.path("raw_data", "crime.csv"))
+
+
+names(housing)[1] <- "csa";names(edu)[1] <- "csa";names(welfare)[1] <- "csa";names(sustain)[1] <- "csa"
+names(crime)[1] <- "csa"
+
+
+edu[-1,] -> edu
+edu <- tbl_df(data.frame(edu[,1],apply(edu[,-1],2,as.numeric)))
+sustain[-1,] -> sustain
+sustain <- tbl_df(data.frame(sustain[,1],apply(sustain[,-1],2,as.numeric)))
+
+
+csa.data %>%
+  inner_join(subset(housing, select = c(csa, shomes14,cashsa14, fore14))) %>%
+  inner_join(subset(crime, select = c(csa, shoot11, gunhom13, narc12))) %>%
+  inner_join(subset(edu, select = c(csa, abse14,absmd14, abshs14, susp13 ))) %>%
+  inner_join(subset(welfare, select = c(csa, birthwt14, liquor14))) %>%
+  inner_join(subset(sustain, select = c(csa, heatgas14, elheat14,wlksc11))) -> csa.data
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = csa.data[,3:26]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
 
 
 detach("package:dplyr", unload=TRUE)
