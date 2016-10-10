@@ -487,6 +487,13 @@ rm(block_crime, block_prop, block_vac, crime_pop_impute, csa.prop)
 
 ##Create analyses data
 
+#Co-ordinates
+csa.prop.health %>% 
+  group_by(csa) %>%
+  summarise(lon.med.avg = mean(lon.med), lat.med.avg = mean(lat.med)) -> coord.lon_lat
+
+## 2014
+
 names(csa.prop.health) <- tolower(names(csa.prop.health))
 names(vac_pop) <- tolower(names(vac_pop))
 names(crime_pop) <- tolower(names(crime_pop)) #Note that lat and lon here refer to that gotten from real_prop data
@@ -565,6 +572,207 @@ X = csa.data[,3:26]
 # X.cent = (I-H) %*% as.matrix(X)
 X = scale(X)
 
+csa.data.anal <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
+
+## 2013
+
+
+#Assume that taxes, and walkscore don't change very much on a yearly basis
+
+csa.prop.health[,c(1:3, 11)] %>% 
+  left_join(subset(crime_pop, year == 2013, select = -c(lon.med, lat.med))) %>%
+  left_join(subset(vac_pop, year == 2013)) %>%
+  mutate(count_vacant = as.numeric(ifelse(is.na(count_vacant), 0, count_vacant)))-> health_prop_le_crime_vac_block
+
+health_prop_le_crime_vac_block %>%
+  inner_join(houses) %>%
+  mutate(prop.vacant = count_vacant/count_house) -> health_prop_le_crime_vac_block
+
+#For any variables that are NA use the neighbourhood average of the csa they belong to for imputation
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -lifeexp13) %>%
+  group_by(csa, neighborhood) %>%
+  summarise( totalincidents = mean(totalincidents, na.rm = T),
+             citytax.avg = mean(citytax.avg, na.rm = T),
+             statetax.avg = mean(statetax.avg, na.rm = T),
+             amountdue.avg = mean(amountdue.avg, na.rm = T),
+             prop.vacant = mean(prop.vacant, na.rm = T)) -> impute
+
+health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents), c(1:4)] %>%
+  inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
+rm(impute)
+
+#Aggregate by CSA 
+
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -neighborhood) %>%
+  filter(!is.nan(totalincidents)) %>%
+  # mutate(count_vacant = as.numeric(count_vacant)) %>%
+  group_by(csa) %>%
+  summarise_all(mean) -> csa.data
+
+#Assume tpop10, racdiv10,mhhi13, femhhs10 don't change over time
+census12_14 %>% select(csa = CSA2010, tpop = tpop10, racdiv10,mhhi13, femhhs10) %>% 
+  inner_join(csa.data) %>%
+  subset(select = (c(csa, lifeexp13, tpop, 
+                     racdiv10, mhhi13, femhhs10, 
+                     totalincidents, citytax.avg, 
+                     statetax.avg, amountdue.avg, 
+                     prop.vacant ))) -> csa.data
+
+csa.data %>%
+  inner_join(subset(housing, select = c(csa, shomes13,cashsa13, fore13))) %>%
+  inner_join(subset(crime, select = c(csa, shoot11, gunhom13, narc12))) %>%
+  inner_join(subset(edu, select = c(csa, abse13,absmd13, abshs13, susp13 ))) %>%
+  inner_join(subset(welfare, select = c(csa, birthwt13, liquor13))) %>%
+  inner_join(subset(sustain, select = c(csa, heatgas14, elheat14,wlksc11))) -> csa.data
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = csa.data[,3:26]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+csa.data.anal_13 <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
+
+## 2012
+
+csa.prop.health[,c(1:3, 10)] %>% 
+  left_join(subset(crime_pop, year == 2012, select = -c(lon.med, lat.med))) %>%
+  left_join(subset(vac_pop, year == 2012)) %>%
+  mutate(count_vacant = as.numeric(ifelse(is.na(count_vacant), 0, count_vacant)))-> health_prop_le_crime_vac_block
+
+health_prop_le_crime_vac_block %>%
+  inner_join(houses) %>%
+  mutate(prop.vacant = count_vacant/count_house) -> health_prop_le_crime_vac_block
+
+#For any variables that are NA use the neighbourhood average of the csa they belong to for imputation
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -lifeexp12) %>%
+  group_by(csa, neighborhood) %>%
+  summarise( totalincidents = mean(totalincidents, na.rm = T),
+             citytax.avg = mean(citytax.avg, na.rm = T),
+             statetax.avg = mean(statetax.avg, na.rm = T),
+             amountdue.avg = mean(amountdue.avg, na.rm = T),
+             prop.vacant = mean(prop.vacant, na.rm = T)) -> impute
+
+health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents), c(1:4)] %>%
+  inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
+rm(impute)
+
+#Aggregate by CSA 
+
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -neighborhood) %>%
+  filter(!is.nan(totalincidents)) %>%
+  group_by(csa) %>%
+  summarise_all(mean) -> csa.data
+
+census12_14 %>% select(csa = CSA2010, tpop = tpop10, racdiv10,mhhi12, femhhs10) %>% 
+  inner_join(csa.data) %>%
+  subset(select = (c(csa, lifeexp12, tpop, 
+                     racdiv10, mhhi12, femhhs10, 
+                     totalincidents, citytax.avg, 
+                     statetax.avg, amountdue.avg, 
+                     prop.vacant ))) -> csa.data
+
+
+csa.data %>%
+  inner_join(subset(housing, select = c(csa, shomes12,cashsa12, fore12))) %>%
+  inner_join(subset(crime, select = c(csa, shoot12, gunhom12, narc12))) %>%
+  inner_join(subset(edu, select = c(csa, abse12,absmd12, abshs12, susp12 ))) %>%
+  inner_join(subset(welfare, select = c(csa, birthwt12, liquor12))) %>%
+  inner_join(subset(sustain, select = c(csa, heatgas14, elheat14,wlksc11))) -> csa.data
+
+csa.data$shoot12[is.na(csa.data$shoot12)] <- crime$shoot11[is.na(csa.data$shoot12)]
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = csa.data[,3:26]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+csa.data.anal_12 <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
+
+## 2011
+
+csa.prop.health[,c(1:3, 9)] %>% 
+  left_join(subset(crime_pop, year == 2011, select = -c(lon.med, lat.med))) %>%
+  left_join(subset(vac_pop, year == 2011)) %>%
+  mutate(count_vacant = as.numeric(ifelse(is.na(count_vacant), 0, count_vacant)))-> health_prop_le_crime_vac_block
+
+health_prop_le_crime_vac_block %>%
+  inner_join(houses) %>%
+  mutate(prop.vacant = count_vacant/count_house) -> health_prop_le_crime_vac_block
+
+#For any variables that are NA use the neighbourhood average of the csa they belong to for imputation
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -lifeexp11) %>%
+  group_by(csa, neighborhood) %>%
+  summarise( totalincidents = mean(totalincidents, na.rm = T),
+             citytax.avg = mean(citytax.avg, na.rm = T),
+             statetax.avg = mean(statetax.avg, na.rm = T),
+             amountdue.avg = mean(amountdue.avg, na.rm = T),
+             prop.vacant = mean(prop.vacant, na.rm = T)) -> impute
+
+health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents), c(1:4)] %>%
+  inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
+
+#2
+#or any variables that are NaN use the CSA average they belong to for imputation
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -lifeexp11, -neighborhood) %>%
+  group_by(csa) %>%
+  summarise( totalincidents = mean(totalincidents, na.rm = T),
+             citytax.avg = mean(citytax.avg, na.rm = T),
+             statetax.avg = mean(statetax.avg, na.rm = T),
+             amountdue.avg = mean(amountdue.avg, na.rm = T),
+             prop.vacant = mean(prop.vacant, na.rm = T)) -> impute
+
+health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents), c(1:4)] %>%
+  inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
+
+
+rm(impute)
+
+#Aggregate by CSA 
+
+health_prop_le_crime_vac_block %>%
+  select(-year, -block, -neighborhood) %>%
+  filter(!is.nan(totalincidents)) %>%
+  # mutate(count_vacant = as.numeric(count_vacant)) %>%
+  group_by(csa) %>%
+  summarise_all(mean) -> csa.data
+
+census12_14 %>% select(csa = CSA2010, tpop = tpop10, racdiv10,mhhi13, femhhs10) %>% 
+  inner_join(csa.data) %>%
+  subset(select = (c(csa, lifeexp11, tpop, 
+                     racdiv10, mhhi13, femhhs10, 
+                     totalincidents, citytax.avg, 
+                     statetax.avg, amountdue.avg, 
+                     prop.vacant ))) -> csa.data
+
+
+csa.data %>%
+  inner_join(subset(housing, select = c(csa, shomes11,cashsa11, fore11))) %>%
+  inner_join(subset(crime, select = c(csa, shoot11, gunhom11, narc12))) %>%
+  inner_join(subset(edu, select = c(csa, abse11,absmd11, abshs14, susp11 ))) %>%
+  inner_join(subset(welfare, select = c(csa, birthwt11, liquor11))) %>%
+  inner_join(subset(sustain, select = c(csa, heatgas14, elheat14,wlksc11))) -> csa.data
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = csa.data[,3:26]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+csa.data.anal_11 <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
 
 detach("package:dplyr", unload=TRUE)
 detach("package:lubridate", unload=TRUE)
