@@ -111,16 +111,17 @@ zip_Arts_and_Culture_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016
 zip_Education_and_Youth_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Education.zip"
 zip_Sustainability_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS-14-Sustainability.zip"
 zip_census_block_2010 <- "http://www.mdp.state.md.us/msdc/census/cen2010/maps/tiger10/blk2010.zip" # 2010 shapefile showing block info
+zip_census_tract_2010 <- "http://planning.maryland.gov/msdc/census/cen2010/maps/tiger10/ct2010.zip" # 2010 shapefile showing tract info
 zip_neighbour <- "https://data.baltimorecity.gov/download/ysi8-7icr/application%2Fzip"
 
 data_names <- c("census.zip", "child_and_fam_wellbeing.zip", "housing.zip",
                 "crime.zip", "workforce.zip", "culture.zip", "edu_and_youth.zip", 
-                "sustain.zip", "census_blk.zip", "neighbour.zip")
+                "sustain.zip", "census_tract.zip", "census_blk.zip", "neighbour.zip")
 data_urls <- c(zip_Census_Demographics_2010_to_2014, zip_Children_and_Family_Health_Well_Being_2010_to_2014,
                zip_Housing_and_Community_Development_2010_to_2014, zip_Crime_Safety_2010_to_2014,
                zip_Workforce_and_Economic_Development_2010_to_2014, zip_Arts_and_Culture_2010_to_2014,
-               zip_Education_and_Youth_2010_to_2014, zip_Sustainability_2010_to_2014, zip_census_block_2010,
-               zip_neighbour)
+               zip_Education_and_Youth_2010_to_2014, zip_Sustainability_2010_to_2014, zip_census_tract_2010, 
+               zip_census_block_2010, zip_neighbour)
 
 
 mapply(function(x,y) {
@@ -137,7 +138,7 @@ mapply(function(x,y) {
 ###   Extract the zip files   ###
 
 ##All except neighbour and block data
-sapply(data_names[1:8], function(x){
+sapply(data_names[1:9], function(x){
   if(!file.exists("wip")){
     dir.create("wip")
   }
@@ -152,12 +153,11 @@ sapply(data_names[1:8], function(x){
 })
 
 ##rename them
-sapply(list.files(file.path(".","wip"), # pattern="*.shp|*.dbf|*.shx"
-), 
-function(x){
-  file.rename(from =file.path(".","wip", x), 
-              to = file.path(".","wip", tolower(gsub("^.*?_", "", x, ignore.case = T)) ) )
-}
+sapply(list.files(file.path(".","wip")), 
+                  function(x){
+                    file.rename(from =file.path(".","wip", x), 
+                                to = file.path(".","wip", tolower(gsub("^.*?_", "", x, ignore.case = T)) ) )
+                  }
 )
 
 ##    Create a sub dir under WIP for each dataset and move the file into it
