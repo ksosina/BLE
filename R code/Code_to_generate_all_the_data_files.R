@@ -95,6 +95,7 @@ dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #Spatia
 
 # Assignment modified according
 sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
+real_prop <- data
 
 # Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
 sp::proj4string(data) <- sp::proj4string(dat.le)
@@ -843,24 +844,37 @@ library(acs)
 
 #Block Group data
 
-#Household Type
+##Related CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
 
 cdbk <- acs.lookup(2014, 5, table.number="B11004")
 hh <- acs.fetch(2014, span  = 5, 
                 geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
                 table.number = "B11004", case.sensitive = F)
+hh <- data.frame(hh@geography[,4:5],hh@estimate, row.names = 1:dim(hh@estimate)[1])
+
+hh %>%
+  mutate(propfemhh = B11004_015/B11004_001) %>% 
+  select(tract, blockgroup, propfemhh) -> hh
 
 #OWN CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
 child.code <- acs.lookup(2014, 5, table.number="B09002")
 child.ft <- acs.fetch(2014, span  = 5, 
                       geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
                       table.number = "B09002", case.sensitive = F)
+child.ft <- data.frame(child.ft@geography[,4:5],child.ft@estimate, row.names = 1:dim(child.ft@estimate)[1])
+
+
 
 #POVERTY STATUS IN THE PAST 12 MONTHS BY DISABILITY STATUS BY EMPLOYMENT STATUS FOR THE POPULATION 20 TO 64 YEARS (get prop below pov line)
 poverty.code <- acs.lookup(2014, 5, table.number="B23024")
 pov.ft <- acs.fetch(2014, span  = 5, 
                     geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
                     table.number = "B23024", case.sensitive = F)
+pov.ft <- data.frame(pov.ft@geography[,4:5],pov.ft@estimate, row.names = 1:dim(pov.ft@estimate)[1])
+
+pov.ft %>%
+  mutate(propbelow = B23024_002/B23024_001) %>% 
+  select(tract, blockgroup, propbelow) -> pov.ft
 
 
 #MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2014 INFLATION-ADJUSTED DOLLARS)
@@ -868,12 +882,116 @@ medinc.code <- acs.lookup(2014, 5, table.number="B19013")
 medinc.ft <- acs.fetch(2014, span  = 5, 
                        geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
                        table.number = "B19013", case.sensitive = F)
+medinc.ft <- data.frame(medinc.ft@geography[,4:5],medinc.ft@estimate, row.names = 1:dim(medinc.ft@estimate)[1])
+
 
 #TYPES OF HEALTH INSURANCE COVERAGE BY AGE
-insur.code <- acs.lookup(2014, 5, table.number="B19013")
+insur.code <- acs.lookup(2014, 5, table.number="B27010")
 insur.ft <- acs.fetch(2014, span  = 5, 
                       geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                      table.number = "B19013", case.sensitive = F)
+                      table.number = "B27010", case.sensitive = F)
+insur.ft <- data.frame(insur.ft@geography[,4:5],insur.ft@estimate, row.names = 1:dim(insur.ft@estimate)[1])
+
+insur.ft %>%
+  mutate(propkids_withinsurance = 1- (B27010_017/B27010_002)) %>% 
+  select(tract, blockgroup, propkids_withinsurance) %>% 
+  mutate(propkids_withinsurance = ifelse(is.nan(propkids_withinsurance),1, propkids_withinsurance)) -> insur.ft
+
+library(tigris)
+bmore.city <- block_groups("MD", "Baltimore city")
+
+# BG <- as.character(dat.le$CSA2010)
+bmore.city <- sp::spTransform(bmore.city, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
+
+# Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
+sp::proj4string(real_prop) <- sp::proj4string(bmore.city)
+
+sp::over(bmore.city, real_prop, returnList = T) -> BG_neighbhd_csa 
+
+BG_neighbhd_csa <- plyr::ldply(BG_neighbhd_csa, data.frame)
+
+as.data.frame(real_prop) %>%
+  group_by(Neighborhood, Block) %>%
+  mutate(lon = median(lon), lat = median(lat)) %>%
+  unique() -> areal.prop
+
+BG_neighbhd_csa %>%
+  inner_join(mutate(bmore.city@data, .id = row.names(bmore.city@data))) %>%
+  select(.id, Neighborhood, Block, tract = TRACTCE, blockgroup = BLKGRPCE) %>%
+  mutate(tract = as.numeric(tract)) %>%
+  left_join(na.omit(hh)) %>% 
+  left_join(na.omit(pov.ft)) %>%
+  left_join(na.omit(medinc.ft)) %>%
+  left_join(na.omit(insur.ft)) %>% 
+  inner_join(areal.prop) %>%
+  unique() %>% na.omit() -> bg_smooth
+
+bg_smooth -> BG_neighbhd_csa
+
+bg_smooth %>%
+  group_by(tract, blockgroup) %>%
+  summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
+            B19013_001 = mean(B19013_001), propkids_withinsurance = mean(propkids_withinsurance), 
+            lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
+rm(areal.prop)
+
+
+
+# Kriging the Block group predictors
+
+sp::coordinates(bg_smooth) <- ~lon + lat
+semivariog <- gstat::variogram(propbelow~1, locations=bg_smooth, data=bg_smooth)
+# plot(semivariog)
+#the data looks like it might be an exponential shape, so we will try that first with the values estimated from the empirical 
+model.variog<-gstat::vgm(psill=0.012, model="Sph", nugget=0.018, range=0.074)
+fit.variog<-gstat::fit.variogram(semivariog, model.variog)
+# plot(semivariog, fit.variog)
+
+## now expand your range to a grid with spacing that you'd like to use in your interpolation
+#here we will use 200m grid cells:
+# grd <- expand.grid(x=seq(from=range(BG_neighbhd_csa$lon)[1], to=range(BG_neighbhd_csa$lon)[2], by=1e-04),
+#                    y=seq(from=range(BG_neighbhd_csa$lat)[1], to=range(BG_neighbhd_csa$lat)[2], by=1e-04))
+
+grd <- data.frame(x=BG_neighbhd_csa$lon,
+                   y=BG_neighbhd_csa$lat)
+
+## convert grid to SpatialPixel class
+coordinates(grd) <- ~ x+y
+# gridded(grd) <- TRUE
+
+krig<-gstat::krige(formula=propbelow~1, locations=bg_smooth, newdata=grd, model=model.variog, nmax = 5)
+
+krig.output <- as.data.frame(krig)
+names(krig.output)[1:3]<-c("lon","lat","propbelow.pred")
+
+BG_neighbhd_csa %>%
+  left_join(krig.output[,-4]) %>%
+  mutate(propbelow.pred = ifelse(is.na(propbelow.pred),propbelow, propbelow.pred))-> BG_neighbhd_csa
+
+semivariog <- gstat::variogram(B19013_001~1, locations=bg_smooth, data=bg_smooth)
+# plot(semivariog)
+#the data looks like it might be an exponential shape, so we will try that first with the values estimated from the empirical 
+model.variog<-gstat::vgm(psill=751835064, model="Exp", nugget=257444639, range=0.074)
+fit.variog<-gstat::fit.variogram(semivariog, model.variog)
+# plot(semivariog, fit.variog)
+
+krig<-gstat::krige(formula=B19013_001~1, locations=bg_smooth, newdata=grd, model=model.variog, nmax = 5)
+
+krig.output <- as.data.frame(krig)
+names(krig.output)[1:3]<-c("lon","lat","B19013_001.pred")
+
+BG_neighbhd_csa %>%
+  left_join(krig.output[,-4]) %>%
+  mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred))-> BG_neighbhd_csa
+
+# #FIt for all possible shapes and check plots
+# g <- gstat::vgm()
+# g <- as.character(g$short)
+# for(i in 2:length(g)){
+#   model.variog<-gstat::vgm(psill=0.012, model=g[i], nugget=0.010, range=0.073)
+#   fit.variog<-gstat::fit.variogram(semivariog, model.variog)
+#   plot(semivariog, fit.variog)
+# }
 
 
 detach("package:dplyr", unload=TRUE)
