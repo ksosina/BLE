@@ -982,7 +982,7 @@ names(krig.output)[1:3]<-c("lon","lat","B19013_001.pred")
 
 BG_neighbhd_csa %>%
   left_join(krig.output[,-4]) %>%
-  mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred))-> BG_neighbhd_csa
+  mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred)) -> BG_neighbhd_csa
 
 # #FIt for all possible shapes and check plots
 # g <- gstat::vgm()
@@ -993,6 +993,7 @@ BG_neighbhd_csa %>%
 #   plot(semivariog, fit.variog)
 # }
 
+rm(krig.output, krig, fit.variog, model.variog, semivariog, grd, bg_smooth)
 
 detach("package:dplyr", unload=TRUE)
 detach("package:lubridate", unload=TRUE)
