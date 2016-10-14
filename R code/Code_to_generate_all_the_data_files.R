@@ -486,6 +486,10 @@ rm(block_crime, block_prop, block_vac, crime_pop_impute, csa.prop)
 
 
 ##Create analyses data
+names(csa.prop.health) <- tolower(names(csa.prop.health))
+names(vac_pop) <- tolower(names(vac_pop))
+names(crime_pop) <- tolower(names(crime_pop)) #Note that lat and lon here refer to that gotten from real_prop data
+names(houses) <- tolower(names(houses))
 
 #Co-ordinates
 csa.prop.health %>% 
@@ -494,10 +498,7 @@ csa.prop.health %>%
 
 ## 2014
 
-names(csa.prop.health) <- tolower(names(csa.prop.health))
-names(vac_pop) <- tolower(names(vac_pop))
-names(crime_pop) <- tolower(names(crime_pop)) #Note that lat and lon here refer to that gotten from real_prop data
-names(houses) <- tolower(names(houses))
+
 # crime_pop[crime_pop$year == 2014,]
 
 csa.prop.health[,c(1:3, 12)] %>% 
@@ -574,6 +575,22 @@ X = scale(X)
 
 csa.data.anal <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
 
+#Block level
+
+csa.data.anal[,c(1:2,4,6 ,17,19,21,23:26)] %>% 
+  inner_join(health_prop_le_crime_vac_block[,c(1:4,6,12)]) %>%
+  inner_join(csa.prop.health[,c(1:3, 7:8)]) -> block_data.anal
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = block_data.anal[,c(3:11, 14:15)]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+block_data.anal <- data.frame(block_data.anal[,c(1,12:13)], X, block_data.anal[,16:17])
+
 ## 2013
 
 
@@ -637,6 +654,22 @@ X = scale(X)
 
 csa.data.anal_13 <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
 
+#Block level
+
+csa.data.anal_13[,c(1:2,4,6 ,17,19,21,23:26)] %>% 
+  inner_join(health_prop_le_crime_vac_block[,c(1:4,6,12)]) %>%
+  inner_join(csa.prop.health[,c(1:3, 7:8)]) -> block_data.anal_13
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = block_data.anal_13[,c(3:11, 14:15)]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+block_data.anal_13 <- data.frame(block_data.anal_13[,c(1,12:13)], X, block_data.anal_13[,16:17])
+
 ## 2012
 
 csa.prop.health[,c(1:3, 10)] %>% 
@@ -697,6 +730,21 @@ X = csa.data[,3:26]
 X = scale(X)
 
 csa.data.anal_12 <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
+
+#Block level
+csa.data.anal_12[,c(1:2,4,6 ,17,19,21,23:26)] %>% 
+  inner_join(health_prop_le_crime_vac_block[,c(1:4,6,12)]) %>%
+  inner_join(csa.prop.health[,c(1:3, 7:8)]) -> block_data.anal_12
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = block_data.anal_12[,c(3:11, 14:15)]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+block_data.anal_12 <- data.frame(block_data.anal_12[,c(1,12:13)], X, block_data.anal_12[,16:17])
 
 ## 2011
 
@@ -774,7 +822,62 @@ X = scale(X)
 
 csa.data.anal_11 <- data.frame(csa.data[,1:2], X, coord.lon_lat[,c(2:3)])
 
+#Block level
+csa.data.anal_11[,c(1:2,4,6 ,17,19,21,23:26)] %>% 
+  inner_join(health_prop_le_crime_vac_block[,c(1:4,6,12)]) %>%
+  inner_join(csa.prop.health[,c(1:3, 7:8)]) -> block_data.anal_11
+
+#Center and scale to have variance 1. Did this because the variables have diff scales so it might affect the X matrix 
+X = block_data.anal_11[,c(3:11, 14:15)]
+# J = rep(1, nrow(X))
+# H = J %*% solve(t(J) %*% J) %*% t(J)
+# I = diag(1, nrow(X), nrow(X))
+# X.cent = (I-H) %*% as.matrix(X)
+X = scale(X)
+
+block_data.anal_11 <- data.frame(block_data.anal_11[,c(1,12:13)], X, block_data.anal_11[,16:17])
+
+##American Community Survey 
+
+library(acs)
+
+#Block Group data
+
+#Household Type
+
+cdbk <- acs.lookup(2014, 5, table.number="B11004")
+hh <- acs.fetch(2014, span  = 5, 
+                geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                table.number = "B11004", case.sensitive = F)
+
+#OWN CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
+child.code <- acs.lookup(2014, 5, table.number="B09002")
+child.ft <- acs.fetch(2014, span  = 5, 
+                      geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                      table.number = "B09002", case.sensitive = F)
+
+#POVERTY STATUS IN THE PAST 12 MONTHS BY DISABILITY STATUS BY EMPLOYMENT STATUS FOR THE POPULATION 20 TO 64 YEARS (get prop below pov line)
+poverty.code <- acs.lookup(2014, 5, table.number="B23024")
+pov.ft <- acs.fetch(2014, span  = 5, 
+                    geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                    table.number = "B23024", case.sensitive = F)
+
+
+#MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2014 INFLATION-ADJUSTED DOLLARS)
+medinc.code <- acs.lookup(2014, 5, table.number="B19013")
+medinc.ft <- acs.fetch(2014, span  = 5, 
+                       geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                       table.number = "B19013", case.sensitive = F)
+
+#TYPES OF HEALTH INSURANCE COVERAGE BY AGE
+insur.code <- acs.lookup(2014, 5, table.number="B19013")
+insur.ft <- acs.fetch(2014, span  = 5, 
+                      geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                      table.number = "B19013", case.sensitive = F)
+
+
 detach("package:dplyr", unload=TRUE)
 detach("package:lubridate", unload=TRUE)
+detach("package:acs", unload=TRUE)
 
 setwd(file.path(".."))
