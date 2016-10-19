@@ -41,7 +41,7 @@ if (n == 0){
               colour="Black",size=2,hjust="center", 
               vjust="center") +
     theme(legend.position = "none") 
-  # detach(real_prop_block)
+  
   
   
   
