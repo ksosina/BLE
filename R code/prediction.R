@@ -100,7 +100,6 @@ data.frame(my_block, pred = pred.b$SDF$prediction + m) %>%
 csa_pred %>%
   inner_join(dat$test_data[,1:2]) -> test_train.csa
 
-test_train.csa
 
 # data.frame(my_csa@data[,1:2], type = "Observed", index = c(1:55)) %>%
 #   bind_rows(data.frame(csa_pred, type = "Predicted aggregate", index = c(1:55))) %>% 
@@ -233,17 +232,76 @@ data.frame(csa = dat$test_data@data[,1], pred.csa = pred.csa$SDF$prediction, lif
   mutate(delta = pred.csa - pred, block.le = lifeexp + delta) %>%
   unique() -> block.pred
 
+head(block.pred)
+
 #Aggregate the results
 block.pred %>%
   dplyr::select(-neighborhood, -block) %>%
-  group_by(csa) %>%
-  summarise_all(mean) -> csa_block.pred
+  dplyr::group_by(csa) %>%
+  dplyr::summarise_all(mean) -> csa_block.pred
 
 m = mean(dat$train_data@data$lifeexp)
 csa_block.pred[,c(1,2,6,4)] %>%
-  mutate(pred.csa = pred.csa+m ) -> csa_block.pred
+  dplyr::mutate(pred.csa = pred.csa+m ) -> csa_block.pred
+
+#Plotting
+map <- ggmap::get_map(location = "Baltimore City", zoom = 12, maptype = "roadmap" )
+p <- ggmap::ggmap(map)
+gor <- rgdal::readOGR(file.path("wip", "census"), "census")
+gor <- sp::spTransform(gor, sp::CRS("+proj=longlat +datum=WGS84"))
+gor <- broom::tidy(gor)
+
+data <- as.data.frame(dat$test_data)
+
+data %>% 
+  dplyr::select(csa, lifeexp, lon, lat) %>%
+  dplyr::inner_join(csa_block.pred) %>%
+  dplyr::inner_join(test_train.csa)  %>%
+  dplyr::mutate(pred.csa = lifeexp.pred)  %>%
+  dplyr::select(csa, lifeexp, block.le,pred.csa,lon, lat) -> data
 
 
+test <- subset(as.data.frame(my_csa), select = c(csa, lifeexp))
+test$pred.csa <- NA
+test$block.le <- NA
+test$lifeexp <- NA
+test$lifeexp[test$csa %in% data$csa] <- data$lifeexp
+test$pred.csa[test$csa %in% data$csa] <- data$pred.csa
+test$block.le[test$csa %in% data$csa] <- data$block.le
+stack(test, select = -csa) -> test
+# dplyr::bind_rows(test[,1:2],test[,c(1,3)], test[,c(1,4)]) -> test
+
+test$id <- rep(as.character(0:54), 3)
+gor %>% dplyr::inner_join(test, by = "id") -> gor
+
+type <- c(
+  block.le = "Aggregated CSA estimates life expectancy from leave one outs",
+  pred.csa = "Aggregated CSA estimates life expectancy from transfer method",
+  lifeexp = "Observed life expectancy"
+)
+
+p <- p + 
+  geom_polygon(data=gor, aes(x=long, y=lat, group = group,fill = values), color="red", alpha=0.6) +
+  # geom_text(data=data,
+  #           aes(label = as.factor(csa)), 
+  #           colour="Black",size=2,hjust="center", 
+  #           vjust="center") +
+  coord_quickmap() +
+  labs(title = "Predicted life expectancy compared to observed\n life expectancy per CSA in the training dataset using two different methods ",
+       x = "Longitude",
+       y = "Latitude") +
+  # theme(legend.position = "none") +
+  scale_fill_gradient2(name = "Values", midpoint = 75, mid = "brown", low = "yellow", high = "red") +
+  facet_grid(. ~ind, labeller = labeller(ind = type)) +
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15),
+        title = element_text(size = 18))
+
+print(p)
+  
 
 # print(NROW(block_pred))
 # ggsave(file.path("..","Plots","pred.png"), width = 45, height = 45, units = "cm")
