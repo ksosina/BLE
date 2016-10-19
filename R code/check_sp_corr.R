@@ -52,7 +52,7 @@ with(neighbhd_csa, tapply(CSA, Neighborhood, function(x) length(unique(x)))) -> 
 
 #Get neighbhds where count of CSA = 2 and check
 unique(neighbhd_csa[neighbhd_csa$Neighborhood == names(test.dat[test.dat == 2][1]),][,c(1,3)]) -> not.unique
-not.unique
+
 
 
 #Step 2

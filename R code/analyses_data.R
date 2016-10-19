@@ -1,6 +1,9 @@
 #Create all data files to be used during analysis
 setwd(file.path("..","Data"))
 
+
+# stop(print(substr(getwd(), 37, nchar(getwd()))))
+
 #First dataset is Census. 1. 2010-2014 has missing info for 2010, 2012, and 2013
 census10.14 <- readr::read_csv(file.path("raw_data", "census.csv"))
 census10 <- readr::read_csv(file.path("raw_data", "census10.csv"))
@@ -16,13 +19,13 @@ names(census10.13)[1] <- names(census10.14)[1]
 library(dplyr);library(lubridate)
 
 #I noticed that some variables have * in front of each figure for hhs10 and mhhi13 in census10.13 so I will replace em
-census10.13 %>% arrange_(.dots=names(census10.13)[1:20]) %>%
-  mutate(hhs10 = as.numeric(gsub("\\*|\\* |,", "", hhs10)),
+census10.13 %>% dplyr::arrange_(.dots=names(census10.13)[1:20]) %>%
+  dplyr::mutate(hhs10 = as.numeric(gsub("\\*|\\* |,", "", hhs10)),
          mhhi13 = as.numeric(gsub("\\*|\\* |,", "", mhhi13))) -> census10.13
 
 #I noticed that mhhi12 has $ in front of each figure in census10.12 so I will replace em
-census10.12  %>% arrange_(.dots=names(census10.12)[1:20]) %>%
-  mutate(mhhi12 = gsub("\\$", "", mhhi12), mhhi12 = as.numeric(mhhi12)) -> census10.12
+census10.12  %>% dplyr::arrange_(.dots=names(census10.12)[1:20]) %>%
+  dplyr::mutate(mhhi12 = gsub("\\$", "", mhhi12), mhhi12 = as.numeric(mhhi12)) -> census10.12
 
 
 
@@ -51,7 +54,7 @@ sapply(1:19, function(x){
 
 census12_14 <- inner_join(census10.12,census10.13) %>% 
   inner_join(census10.14, by = names(census10.14)[2:20][-16]) %>% #join on 19 variables after we exclude hhs10
-  select(-CSA2010.y,-hhs10.y, CSA2010 = CSA2010.x)
+  dplyr::select(-CSA2010.y,-hhs10.y, CSA2010 = CSA2010.x)
 rm(census10.12, census10.13, census10.14, c1,c2,c3,c4)
 
 
@@ -62,8 +65,8 @@ rm(census10.12, census10.13, census10.14, c1,c2,c3,c4)
 data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
 
 #get count of houses per block
-data %>% group_by(Neighborhood,Block) %>%
-  summarise(count_house = n()) -> houses
+data %>% dplyr::group_by(Neighborhood,Block) %>%
+  dplyr::summarise(count_house = n()) -> houses
 
 dat1 <- subset(data, select = names(data)[c(2:3,6,8,9,11,13:15)])
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
@@ -82,15 +85,13 @@ dat1[!is.na(dat1$Neighborhood),] <- data.frame(dat1[!is.na(dat1$Neighborhood),][
                                                lon = as.numeric(new_loc[,2]), 
                                                lat = as.numeric(new_loc[,1]))
 
-# dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
-#                   lon = data$lon,
-#                   lat =data$lat, stringsAsFactors=FALSE)
 
 #Step 1
 ### Check if Lng and Lat fall inside polygons from ESRI Shape file for Child and wellbeing (this has the outcome)
 dat.le <-  rgdal::readOGR(file.path("wip", "health"), "health")
 csa <- as.character(dat.le$CSA2010)
 dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
+
 
 
 # Assignment modified according
@@ -115,14 +116,14 @@ identical(sort(unique(dat1$Neighborhood)), sort(unique(neighbhd_csa$Neighborhood
 
 #Careful file size for join without summary is ~2GB!!!
 inner_join(neighbhd_csa, dat1) %>%
-  mutate(CityTax = gsub("\\$", "", CityTax), CityTax = as.numeric(CityTax),
+  dplyr::mutate(CityTax = gsub("\\$", "", CityTax), CityTax = as.numeric(CityTax),
          StateTax = gsub("\\$", "", StateTax), StateTax = as.numeric(StateTax),
          AmountDue = gsub("\\$", "", AmountDue), AmountDue = as.numeric(AmountDue)) %>%
-  group_by(CSA, Neighborhood, Block) %>%
-  summarise(CityTax.med = median(CityTax, na.rm = T), StateTax.med = median(StateTax, na.rm = T), 
+  dplyr::group_by(CSA, Neighborhood, Block) %>%
+  dplyr::summarise(CityTax.med = median(CityTax, na.rm = T), StateTax.med = median(StateTax, na.rm = T), 
             AmountDue.med = median(AmountDue, na.rm = T), lon.med = median(lon, na.rm = T), lat.med = median(lat)) -> csa.prop
 
-pryr::object_size(csa.prop)
+# pryr::object_size(csa.prop)
 
 
 #Outcome data
@@ -224,13 +225,13 @@ rm(csa, dat.le,data, new_loc, neighbhd_csa, dat1)
 
 
 
-ifiles <- unzip(file.path(".","raw_data", "census_blk.zip"), list = T)
+ifiles <- unzip(file.path("raw_data", "census_blk.zip"), list = T)
 ifiles.name <- substr(ifiles[,1][1], 1, nchar(ifiles[,1][1]) - 4)
 
-if(!file.exists( file.path(".","wip", ifiles.name ) )){
-  dir.create(file.path(".","wip", ifiles.name ))
-  unzip(file.path(".","raw_data", "census_blk.zip"), 
-        files = grep("*[.]", ifiles[,1], value = T), exdir = file.path(".","wip",ifiles.name), junkpaths = T)
+if(!file.exists( file.path("wip", ifiles.name ) )){
+  dir.create(file.path("wip", ifiles.name ))
+  unzip(file.path("raw_data", "census_blk.zip"), 
+        files = grep("*[.]", ifiles[,1], value = T), exdir = file.path("wip",ifiles.name), junkpaths = T)
 } 
 
 ##Load data from crime data that contains street,Neighborhood and Police District info
@@ -263,6 +264,7 @@ dat.le <-  rgdal::readOGR(file.path("wip", "blk2010"), "blk2010")
 block <- as.character(dat.le$BLOCK)
 dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
 
+#
 
 # Assignment modified according
 sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
@@ -286,7 +288,7 @@ names(block_crime) <- clnames
 block_crime$Neighborhood <- toupper(block_crime$Neighborhood)
 
 block_crime <- block_crime %>% 
-  mutate(year = year(as.Date(CrimeDate, "%m/%d/%Y")))
+  dplyr::mutate(year = year(as.Date(CrimeDate, "%m/%d/%Y")))
 block_crime <- subset(plyr::arrange(block_crime, Neighborhood, Blocks, year, Street, CrimeDate), 
                       select = c(Neighborhood, Blocks, year, Street, CrimeDate)) 
 
@@ -346,12 +348,12 @@ dat1$Neighborhood <- toupper(dat1$Neighborhood)
 block_crime_pop %>% 
   inner_join(dat1[,-c(12,13)]) %>% #Removing lon and lat since it is approximate for crime data
   inner_join(dat2[,c(1,4:7, 10:11)]) %>%
-  mutate(CityTax = gsub("\\$", "", CityTax), CityTax = as.numeric(CityTax),
+  dplyr::mutate(CityTax = gsub("\\$", "", CityTax), CityTax = as.numeric(CityTax),
          StateTax = gsub("\\$", "", StateTax), StateTax = as.numeric(StateTax),
          AmountDue = gsub("\\$", "", AmountDue), AmountDue = as.numeric(AmountDue), 
          TotalIncidents = as.numeric(`Total Incidents`)) %>%
-  group_by(Neighborhood, Block, year) %>% 
-  summarise(TotalIncidents = sum(TotalIncidents, na.rm = T),
+  dplyr::group_by(Neighborhood, Block, year) %>% 
+  dplyr::summarise(TotalIncidents = sum(TotalIncidents, na.rm = T),
             mean(CityTax, na.rm = T),
             mean(StateTax, na.rm = T),
             mean(AmountDue, na.rm = T),
@@ -381,7 +383,7 @@ data.frame(dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood) ,][,1:4
 
 #Convert Noticedate to date obj and then extract the year
 dat3 %>% 
-  mutate(year =  year(as.Date(NoticeDate, "%m/%d/%Y")),Neighborhood = toupper(Neighborhood)) -> dat3
+  dplyr::mutate(year =  year(as.Date(NoticeDate, "%m/%d/%Y")),Neighborhood = toupper(Neighborhood)) -> dat3
 
 # Assignment modified according
 sp::coordinates(data) <- ~lon + lat #SpatialPointsDataFrame
@@ -413,9 +415,9 @@ block_vac <- unique(block_vac)
 dplyr::inner_join(block_vac,block_prop) -> block_vac_pop 
 
 block_vac_pop %>% 
-  inner_join(dat3, by  = c("Neighborhood", "BuildingAddress", "NoticeDate")) %>% #Join to vacant_building dataset by street, nbhd, and date
-  group_by(Neighborhood, Block = Block.x, Year = year) %>% #Group by Neighbourhood, block and year to obtain summary stats
-  summarise(Count_vancant = length(BuildingAddress)) -> block_vac_pop #Remove NA tags. This NA tags represents vacancy but for unknown years
+  dplyr::inner_join(dat3, by  = c("Neighborhood", "BuildingAddress", "NoticeDate")) %>% #Join to vacant_building dataset by street, nbhd, and date
+  dplyr::group_by(Neighborhood, Block = Block.x, Year = year) %>% #Group by Neighbourhood, block and year to obtain summary stats
+  dplyr::summarise(Count_vancant = length(BuildingAddress)) -> block_vac_pop #Remove NA tags. This NA tags represents vacancy but for unknown years
 
 rm(dat.le,dat1, dat2, dat3, block, 
    new_loc, ifiles, ifiles.name,clnames, data)
@@ -424,7 +426,7 @@ rm(dat.le,dat1, dat2, dat3, block,
 ##For block_crime_pop and block_vac_pop, I want the "years' variable to rep all the possible years between 2010 and 2016
 block_crime_pop -> block_crime_pop1
 block_crime_pop1 %>% 
-  select(Neighborhood, Block) %>%
+  dplyr::select(Neighborhood, Block) %>%
   unique() -> block_crime_pop1
 
 block_crime_pop1[rep(seq_len(nrow(block_crime_pop1)), each=5),] -> block_crime_pop1
@@ -443,7 +445,7 @@ block_crime_pop1 %>%
 #        AmountDue.avg = ifelse(is.na(AmountDue.avg), 0, AmountDue.avg) ) -> crime_pop
 crime_pop_impute <- crime_pop %>%
   subset(select = -Block) %>%
-  group_by(Neighborhood, year) %>%
+  dplyr::group_by(Neighborhood, year) %>%
   summarise_all(mean, na.rm = T)
 # Impute neighbourhood average for the particular year
 attach(crime_pop)
@@ -458,7 +460,7 @@ crime_pop[is.na(AmountDue.avg), ][,c(1,3)] %>%
 
 #After imputation some years just have missing info
 crime_pop %>%
-  mutate(TotalIncidents = ifelse(is.na(TotalIncidents), 0, TotalIncidents),
+  dplyr::mutate(TotalIncidents = ifelse(is.na(TotalIncidents), 0, TotalIncidents),
          CityTax.avg = ifelse(is.na(CityTax.avg), 0, CityTax.avg),
          StateTax.avg = ifelse(is.na(StateTax.avg), 0, StateTax.avg),
          AmountDue.avg = ifelse(is.na(AmountDue.avg), 0, AmountDue.avg) ) -> crime_pop
@@ -467,7 +469,7 @@ detach(crime_pop)
 
 block_vac_pop -> block_vac_pop1
 block_vac_pop1 %>% 
-  select(Neighborhood, Block) %>%
+  dplyr::select(Neighborhood, Block) %>%
   unique() -> block_vac_pop1
 
 block_vac_pop1[rep(seq_len(nrow(block_vac_pop1)), each=5),] -> block_vac_pop1
@@ -494,8 +496,8 @@ names(houses) <- tolower(names(houses))
 
 #Co-ordinates
 csa.prop.health %>% 
-  group_by(csa) %>%
-  summarise(lon.med.avg = mean(lon.med), lat.med.avg = mean(lat.med)) -> coord.lon_lat
+  dplyr::group_by(csa) %>%
+  dplyr::summarise(lon.med.avg = mean(lon.med), lat.med.avg = mean(lat.med)) -> coord.lon_lat
 
 ## 2014
 
@@ -505,17 +507,17 @@ csa.prop.health %>%
 csa.prop.health[,c(1:3, 12)] %>% 
   left_join(subset(crime_pop, year == 2014, select = -c(lon.med, lat.med))) %>%
   left_join(subset(vac_pop, year == 2014)) %>%
-  mutate(count_vacant = as.numeric(ifelse(is.na(count_vacant), 0, count_vacant)))-> health_prop_le_crime_vac_block
+  dplyr::mutate(count_vacant = as.numeric(ifelse(is.na(count_vacant), 0, count_vacant)))-> health_prop_le_crime_vac_block
 
 health_prop_le_crime_vac_block %>%
   inner_join(houses) %>%
-  mutate(prop.vacant = count_vacant/count_house) -> health_prop_le_crime_vac_block
+  dplyr::mutate(prop.vacant = count_vacant/count_house) -> health_prop_le_crime_vac_block
 
 #For any variables that are NA use the neighbourhood average of the csa they belong to for imputation
 health_prop_le_crime_vac_block %>%
-  select(-year, -block, -lifeexp14) %>%
-  group_by(csa, neighborhood) %>%
-  summarise( totalincidents = mean(totalincidents, na.rm = T),
+  dplyr::select(-year, -block, -lifeexp14) %>%
+  dplyr::group_by(csa, neighborhood) %>%
+  dplyr::summarise( totalincidents = mean(totalincidents, na.rm = T),
              citytax.avg = mean(citytax.avg, na.rm = T),
              statetax.avg = mean(statetax.avg, na.rm = T),
              amountdue.avg = mean(amountdue.avg, na.rm = T),
@@ -525,16 +527,31 @@ health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalinciden
   inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
 rm(impute)
 
+#For any variables that are still NA use the CSA average that they belong to for imputation
+health_prop_le_crime_vac_block %>%
+  dplyr::select(-year, -block, -lifeexp14) %>%
+  dplyr::group_by(csa) %>%
+  dplyr::summarise( totalincidents = mean(totalincidents, na.rm = T),
+             citytax.avg = mean(citytax.avg, na.rm = T),
+             statetax.avg = mean(statetax.avg, na.rm = T),
+             amountdue.avg = mean(amountdue.avg, na.rm = T),
+             prop.vacant = mean(prop.vacant, na.rm = T)) -> impute
+
+health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents), c(1:4)] %>%
+  inner_join(impute) -> health_prop_le_crime_vac_block[is.na(health_prop_le_crime_vac_block$totalincidents),][,-c(5, 10:11)]
+rm(impute)
+
+
 #Aggregate by CSA 
 
 health_prop_le_crime_vac_block %>%
-  select(-year, -block, -neighborhood) %>%
+  dplyr::select(-year, -block, -neighborhood) %>%
   filter(!is.nan(totalincidents)) %>%
   # mutate(count_vacant = as.numeric(count_vacant)) %>%
-  group_by(csa) %>%
+  dplyr::group_by(csa) %>%
   summarise_all(mean) -> csa.data
 
-census12_14 %>% select(csa = CSA2010, tpop = tpop10, racdiv10,mhhi13, femhhs10) %>% 
+census12_14 %>% dplyr::select(csa = CSA2010, tpop = tpop10, racdiv10,mhhi13, femhhs10) %>% 
   inner_join(csa.data) %>%
   subset(select = (c(csa, lifeexp14, tpop, 
                      racdiv10, mhhi13, femhhs10, 
@@ -575,7 +592,7 @@ rm(csa.data)
 
 csa.data.anal[,c(1:2,4,6 ,17,19,21,23:26)] %>% 
   inner_join(health_prop_le_crime_vac_block[,c(1:4,6,12)]) %>%
-  inner_join(csa.prop.health[,c(1:3, 7:8)]) -> block_data.anal
+  inner_join(csa.prop.health[,c(1:3, 7:8)]) %>% unique() -> block_data.anal
 
 
 block_data.anal <- data.frame(block_data.anal[,c(1,12:13)], block_data.anal[,c(3:11, 14:15)], block_data.anal[,16:17])
@@ -597,8 +614,8 @@ hh <- acs.fetch(2014, span  = 5,
 hh <- data.frame(hh@geography[,4:5],hh@estimate, row.names = 1:dim(hh@estimate)[1])
 
 hh %>%
-  mutate(propfemhh = B11004_015/B11004_001) %>% 
-  select(tract, blockgroup, propfemhh) -> hh
+  dplyr::mutate(propfemhh = B11004_015/B11004_001) %>% 
+  dplyr::select(tract, blockgroup, propfemhh) -> hh
 
 #OWN CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
 child.code <- acs.lookup(2014, 5, table.number="B09002")
@@ -617,8 +634,8 @@ pov.ft <- acs.fetch(2014, span  = 5,
 pov.ft <- data.frame(pov.ft@geography[,4:5],pov.ft@estimate, row.names = 1:dim(pov.ft@estimate)[1])
 
 pov.ft %>%
-  mutate(propbelow = B23024_002/B23024_001) %>% 
-  select(tract, blockgroup, propbelow) -> pov.ft
+  dplyr::mutate(propbelow = B23024_002/B23024_001) %>% 
+  dplyr::select(tract, blockgroup, propbelow) -> pov.ft
 
 
 #MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2014 INFLATION-ADJUSTED DOLLARS)
@@ -637,9 +654,9 @@ insur.ft <- acs.fetch(2014, span  = 5,
 insur.ft <- data.frame(insur.ft@geography[,4:5],insur.ft@estimate, row.names = 1:dim(insur.ft@estimate)[1])
 
 insur.ft %>%
-  mutate(propkids_withinsurance = 1- (B27010_017/B27010_002)) %>% 
-  select(tract, blockgroup, propkids_withinsurance) %>% 
-  mutate(propkids_withinsurance = ifelse(is.nan(propkids_withinsurance),1, propkids_withinsurance)) -> insur.ft
+  dplyr::mutate(propkids_withinsurance = 1- (B27010_017/B27010_002)) %>% 
+  dplyr::select(tract, blockgroup, propkids_withinsurance) %>% 
+  dplyr::mutate(propkids_withinsurance = ifelse(is.nan(propkids_withinsurance),1, propkids_withinsurance)) -> insur.ft
 
 #RACE "to calculate racial diversity"
 
@@ -655,18 +672,22 @@ race.ft <- acs.fetch(2014, span  = 5,
 race.ft <- data.frame(race.ft@geography[,4:5],race.ft@estimate, row.names = 1:dim(race.ft@estimate)[1])
 
 race.ft %>%
-  mutate(B02001_002 = B02001_002/B02001_001, B02001_003 = B02001_003/B02001_001, B02001_004 = B02001_004/B02001_001,
+  dplyr::mutate(B02001_002 = B02001_002/B02001_001, B02001_003 = B02001_003/B02001_001, B02001_004 = B02001_004/B02001_001,
          B02001_005 = B02001_005/B02001_001, B02001_006 = B02001_006/B02001_001, B02001_007 = B02001_007/B02001_001,
          B02001_010 = B02001_010/B02001_001, 
          racdiv = 1-(B02001_002^2 + B02001_003^2 + B02001_004^2 + B02001_005^2 + B02001_006^2 + B02001_007^2 + B02001_010^2)) %>% 
-  select(tract, blockgroup, racdiv) -> race.ft
+  dplyr::select(tract, blockgroup, racdiv) -> race.ft
 
 library(tigris)
 bmore.city <- block_groups("MD", "Baltimore city")
 
 # BG <- as.character(dat.le$CSA2010)
-bmore.city <- sp::spTransform(bmore.city, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
+bmore.city_sp <- sp::spTransform(bmore.city, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
 
+bmore.city <- bmore.city_sp
+
+
+rm(bmore.city_sp)
 # Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
 sp::proj4string(real_prop) <- sp::proj4string(bmore.city)
 
@@ -675,27 +696,26 @@ sp::over(bmore.city, real_prop, returnList = T) -> BG_neighbhd_csa
 BG_neighbhd_csa <- plyr::ldply(BG_neighbhd_csa, data.frame)
 
 as.data.frame(real_prop) %>%
-  group_by(Neighborhood, Block) %>%
-  mutate(lon = median(lon), lat = median(lat)) %>%
-  unique() -> areal.prop
+  dplyr::group_by(Neighborhood, Block) %>%
+  dplyr::summarise(lon = median(lon), lat = median(lat)) -> areal.prop
 
 BG_neighbhd_csa %>%
-  inner_join(mutate(bmore.city@data, .id = row.names(bmore.city@data))) %>%
-  select(.id, Neighborhood, Block, tract = TRACTCE, blockgroup = BLKGRPCE) %>%
-  mutate(tract = as.numeric(tract)) %>%
-  left_join(na.omit(hh)) %>% 
-  left_join(na.omit(pov.ft)) %>%
-  left_join(na.omit(medinc.ft)) %>%
-  left_join(na.omit(insur.ft)) %>% 
-  left_join(na.omit(race.ft)) %>%
-  inner_join(areal.prop) %>%
+  dplyr::inner_join(dplyr::mutate(bmore.city@data, .id = row.names(bmore.city@data))) %>%
+  dplyr::select(.id, Neighborhood, Block, tract = TRACTCE, blockgroup = BLKGRPCE) %>%
+  dplyr::mutate(tract = as.numeric(tract)) %>%
+  dplyr::left_join(na.omit(hh)) %>% 
+  dplyr::left_join(na.omit(pov.ft)) %>%
+  dplyr::left_join(na.omit(medinc.ft)) %>%
+  dplyr::left_join(na.omit(insur.ft)) %>% 
+  dplyr::left_join(na.omit(race.ft)) %>%
+  dplyr::inner_join(areal.prop) %>%
   unique() %>% na.omit() -> bg_smooth
 
 bg_smooth -> BG_neighbhd_csa
 
 bg_smooth %>%
-  group_by(tract, blockgroup) %>%
-  summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
+  dplyr::group_by(tract, blockgroup) %>%
+  dplyr::summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
             B19013_001 = mean(B19013_001), propkids_withinsurance = mean(propkids_withinsurance), 
             racdiv = mean(racdiv),lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
 rm(areal.prop)
@@ -731,8 +751,8 @@ krig.output <- as.data.frame(krig)
 names(krig.output)[1:3]<-c("lon","lat","propbelow.pred")
 
 BG_neighbhd_csa %>%
-  left_join(krig.output[,-4]) %>%
-  mutate(propbelow.pred = ifelse(is.na(propbelow.pred),propbelow, propbelow.pred))-> BG_neighbhd_csa
+  dplyr::left_join(krig.output[,-4]) %>%
+  dplyr::mutate(propbelow.pred = ifelse(is.na(propbelow.pred),propbelow, propbelow.pred))-> BG_neighbhd_csa
 
 #Median Income
 semivariog <- gstat::variogram(B19013_001~1, locations=bg_smooth, data=bg_smooth)
@@ -748,15 +768,15 @@ krig.output <- as.data.frame(krig)
 names(krig.output)[1:3]<-c("lon","lat","B19013_001.pred")
 
 BG_neighbhd_csa %>%
-  left_join(krig.output[,-4]) %>%
-  mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred)) -> BG_neighbhd_csa
+  dplyr::left_join(krig.output[,-4]) %>%
+  dplyr::mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred)) -> BG_neighbhd_csa
 
 
-rm(krig.output, krig, fit.variog, model.variog, semivariog, grd, bg_smooth, g)
+rm(krig.output, krig, fit.variog, model.variog, semivariog, grd, bg_smooth)
 
 detach("package:dplyr", unload=TRUE)
 detach("package:lubridate", unload=TRUE)
 detach("package:acs", unload=TRUE)
 
-save.image()
+save.image("analyses_data.RData")
 setwd(file.path(".."))

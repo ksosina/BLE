@@ -1,10 +1,10 @@
 setwd(file.path("..", "Data"))
 
-
+# rm(list = ls())
 #### ID which neighborhoods fall into a CSA
 
 ##Load data from real properties that contains block info
-data <- readr::read_csv(file.path("raw_data", "property.csv"))
+data <- readr::read_csv(file.path("raw_data", "property.csv.gz"))
 subset(data, select = c("Block", "Neighborhood", "Location")) -> data
 
 data <- na.omit(data)
@@ -163,12 +163,14 @@ mtdata %>% inner_join(health.sub) -> mtdata
 # csa.dists <- dist(cbind(mtdata$lon.med, mtdata$lat.med), method = "euclidean")
 csa.dists <- geosphere::distm(cbind(mtdata$lon.med, mtdata$lat.med), fun = geosphere::distVincentyEllipsoid)
 csa.dists <- as.dist(csa.dists)
-le11.dists <- dist(mtdata$LifeExp11, method = "euclidean")
+save.image("corr.RData")
+le14.dists <- dist(mtdata$LifeExp14, method = "euclidean")
 
 # ade4::mantel.rtest(csa.dists, le11.dists, nrepet = 9999)
 # plot(ade4::mantel.rtest(csa.dists, le11.dists, nrepet = 9999))
-ade4::mantel.randtest(csa.dists, le11.dists, nrepet = 9999)
-plot(ade4::mantel.randtest(csa.dists, le11.dists, nrepet = 9999), main = "Mantel's test")
+result <- ade4::mantel.randtest(csa.dists, le14.dists, nrepet = 9999)
+print(result)
+plot(result, main = "Mantel's test")
 
 
 detach("package:dplyr", unload=TRUE)

@@ -253,8 +253,8 @@ new_loc <- t(new_loc)
 data <- data.frame(data[,c(1,2, 4)], lon = as.numeric(new_loc[,2]), lat = as.numeric(new_loc[,1]))
 dat1$lon <- NA;dat1$lat <- NA
 dat1[!is.na(dat1$Location),][,-11] <- data.frame(dat1[!is.na(dat1$Location),][,-c(11,13,14)],
-                                               lon = as.numeric(new_loc[,2]), 
-                                               lat = as.numeric(new_loc[,1]))
+                                                 lon = as.numeric(new_loc[,2]), 
+                                                 lat = as.numeric(new_loc[,1]))
 dat1 <- subset(dat1, select = -Location)
 
 #Step 1
@@ -376,8 +376,8 @@ data <- data.frame(data[,c(1,2, 4)], lon = as.numeric(new_loc[,2]), lat = as.num
 
 dat3$lon <- NA;dat3$lat <- NA
 data.frame(dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood) ,][,1:4],
-                                               lon = as.numeric(new_loc[,2]), 
-                                               lat = as.numeric(new_loc[,1])) -> dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood),]
+           lon = as.numeric(new_loc[,2]), 
+           lat = as.numeric(new_loc[,1])) -> dat3[!is.na(dat3$BuildingAddress) & !is.na(dat3$Neighborhood),]
 
 #Convert Noticedate to date obj and then extract the year
 dat3 %>% 
@@ -408,7 +408,7 @@ block_vac <- unique(block_vac)
 # Get which block numeration corresponds to street block in real_prop taxes
 
 #Join to real_property taxes dataset by Neighbourhood and block(numerical) to get which street and Neighbourhood correspond to what 
-  #to what Neighbourhood and block in real_property taxes
+#to what Neighbourhood and block in real_property taxes
 
 dplyr::inner_join(block_vac,block_prop) -> block_vac_pop 
 
@@ -437,10 +437,10 @@ names(block_crime_pop) <- c(names(block_crime_pop)[1:4], "CityTax.avg",
 
 block_crime_pop1 %>% 
   left_join(block_crime_pop) -> crime_pop 
-  # mutate(TotalIncidents = ifelse(is.na(TotalIncidents), 0, TotalIncidents),
-  #        CityTax.avg = ifelse(is.na(CityTax.avg), 0, CityTax.avg),
-  #        StateTax.avg = ifelse(is.na(StateTax.avg), 0, StateTax.avg),
-  #        AmountDue.avg = ifelse(is.na(AmountDue.avg), 0, AmountDue.avg) ) -> crime_pop
+# mutate(TotalIncidents = ifelse(is.na(TotalIncidents), 0, TotalIncidents),
+#        CityTax.avg = ifelse(is.na(CityTax.avg), 0, CityTax.avg),
+#        StateTax.avg = ifelse(is.na(StateTax.avg), 0, StateTax.avg),
+#        AmountDue.avg = ifelse(is.na(AmountDue.avg), 0, AmountDue.avg) ) -> crime_pop
 crime_pop_impute <- crime_pop %>%
   subset(select = -Block) %>%
   group_by(Neighborhood, year) %>%
@@ -897,6 +897,26 @@ insur.ft %>%
   select(tract, blockgroup, propkids_withinsurance) %>% 
   mutate(propkids_withinsurance = ifelse(is.nan(propkids_withinsurance),1, propkids_withinsurance)) -> insur.ft
 
+#RACE "to calculate racial diversity"
+
+# Working with percents expressed as ratios (e.g., 63 percent = 0.63), the index is calculated in three steps:  A. Square the percent for each
+# group, B. Sum the squares, and C. Subtract the sum from 1.00. Eight groups were used for the index: 1. White, not Hispanic;
+# 2. Black or African American; 3. American Indian and Alaska Native (AIAN); 4. Asian; 5. Native Hawaiian and Other Pacific
+# Islander (NHOPI); 6. Two or more races, not Hispanic; 7. Some other race, not Hispanic; and 8. Hispanic or Latino
+
+race.code <- acs.lookup(2014, 5, table.number="B02001")
+race.ft <- acs.fetch(2014, span  = 5, 
+                     geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                     table.number = "B02001", case.sensitive = F)
+race.ft <- data.frame(race.ft@geography[,4:5],race.ft@estimate, row.names = 1:dim(race.ft@estimate)[1])
+
+race.ft %>%
+  mutate(B02001_002 = B02001_002/B02001_001, B02001_003 = B02001_003/B02001_001, B02001_004 = B02001_004/B02001_001,
+         B02001_005 = B02001_005/B02001_001, B02001_006 = B02001_006/B02001_001, B02001_007 = B02001_007/B02001_001,
+         B02001_010 = B02001_010/B02001_001, 
+         racdiv = 1-(B02001_002^2 + B02001_003^2 + B02001_004^2 + B02001_005^2 + B02001_006^2 + B02001_007^2 + B02001_010^2)) %>% 
+  select(tract, blockgroup, racdiv) -> race.ft
+
 library(tigris)
 bmore.city <- block_groups("MD", "Baltimore city")
 
@@ -923,6 +943,7 @@ BG_neighbhd_csa %>%
   left_join(na.omit(pov.ft)) %>%
   left_join(na.omit(medinc.ft)) %>%
   left_join(na.omit(insur.ft)) %>% 
+  left_join(na.omit(race.ft)) %>%
   inner_join(areal.prop) %>%
   unique() %>% na.omit() -> bg_smooth
 
@@ -932,13 +953,14 @@ bg_smooth %>%
   group_by(tract, blockgroup) %>%
   summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
             B19013_001 = mean(B19013_001), propkids_withinsurance = mean(propkids_withinsurance), 
-            lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
+            racdiv = mean(racdiv),lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
 rm(areal.prop)
 
 
 
 # Kriging the Block group predictors
 
+#proportion below Poverty
 sp::coordinates(bg_smooth) <- ~lon + lat
 semivariog <- gstat::variogram(propbelow~1, locations=bg_smooth, data=bg_smooth)
 # plot(semivariog)
@@ -953,7 +975,7 @@ fit.variog<-gstat::fit.variogram(semivariog, model.variog)
 #                    y=seq(from=range(BG_neighbhd_csa$lat)[1], to=range(BG_neighbhd_csa$lat)[2], by=1e-04))
 
 grd <- data.frame(x=BG_neighbhd_csa$lon,
-                   y=BG_neighbhd_csa$lat)
+                  y=BG_neighbhd_csa$lat)
 
 ## convert grid to SpatialPixel class
 coordinates(grd) <- ~ x+y
@@ -968,6 +990,7 @@ BG_neighbhd_csa %>%
   left_join(krig.output[,-4]) %>%
   mutate(propbelow.pred = ifelse(is.na(propbelow.pred),propbelow, propbelow.pred))-> BG_neighbhd_csa
 
+#Median Income
 semivariog <- gstat::variogram(B19013_001~1, locations=bg_smooth, data=bg_smooth)
 # plot(semivariog)
 #the data looks like it might be an exponential shape, so we will try that first with the values estimated from the empirical 
@@ -984,16 +1007,33 @@ BG_neighbhd_csa %>%
   left_join(krig.output[,-4]) %>%
   mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred)) -> BG_neighbhd_csa
 
-# #FIt for all possible shapes and check plots
+#Racial diversity -- Decided not to do this due to the nature of blocks in baltimore
+# semivariog <- gstat::variogram(racdiv~1, locations=bg_smooth, data=bg_smooth)
+# # plot(semivariog)
+# #the data looks like it might be an exponential shape, so we will try that first with the values estimated from the empirical 
+# model.variog<-gstat::vgm(psill=0.021, model="Pen", nugget=0.040, range=0.074)
+# fit.variog<-gstat::fit.variogram(semivariog, model.variog)
+# # plot(semivariog, fit.variog)
+# 
+# krig<-gstat::krige(formula=racdiv~1, locations=bg_smooth, newdata=grd, model=model.variog, nmax = 5)
+# 
+# krig.output <- as.data.frame(krig)
+# names(krig.output)[1:3]<-c("lon","lat","racdiv.pred")
+# 
+# BG_neighbhd_csa %>%
+#   left_join(krig.output[,-4]) %>%
+#   mutate(mhhi = ifelse(is.na(B19013_001.pred),B19013_001, B19013_001.pred)) -> BG_neighbhd_csa
+#FIt for all possible shapes and check plots
 # g <- gstat::vgm()
 # g <- as.character(g$short)
-# for(i in 2:length(g)){
-#   model.variog<-gstat::vgm(psill=0.012, model=g[i], nugget=0.010, range=0.073)
+# for(i in 2:length(g[1:11])){
+#   # print(g[i])
+#   model.variog<-gstat::vgm(psill=0.021, model=g[i], nugget=0.040, range=0.074)
 #   fit.variog<-gstat::fit.variogram(semivariog, model.variog)
-#   plot(semivariog, fit.variog)
+#   print(plot(semivariog, fit.variog, main =g[i] ))
 # }
 
-rm(krig.output, krig, fit.variog, model.variog, semivariog, grd, bg_smooth)
+rm(krig.output, krig, fit.variog, model.variog, semivariog, grd, bg_smooth, g)
 
 detach("package:dplyr", unload=TRUE)
 detach("package:lubridate", unload=TRUE)

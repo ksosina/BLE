@@ -1,4 +1,4 @@
-setwd(file.path("Data"))  
+setwd(file.path("..", "Data"))  
 packages <- c("ggplot2","lubridate", "downloader", 
               "readr", "readxl", "maptools", "RColorBrewer", "ggmap", "devtools")
 sapply(packages, library, character.only = T, quietly = T)

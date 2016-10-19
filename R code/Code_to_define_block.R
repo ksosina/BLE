@@ -119,10 +119,16 @@ p + geom_point(data=data,aes(x = lon, y = lat, colour = factor(data$Neighborhood
   labs(title = "Neighbourhoods as defined by Blocks Using just Block level data",
        x = "Longitude",
        y = "Latitude") +
-  theme(legend.position = "none") 
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15),
+        title = element_text(size = 18),
+        legend.position = "none")
 
 ggsave(filename = file.path("..", "Plots", 
-                            "n_block_block.png"), width = 45, height = 45, units = "cm", dpi = 300)
+                            "n_block_block.png"), width = 45, height = 45, units = "cm")
 
 #Fit of neighbourhood info
 gor <- readOGR(file.path("wip", "nhood"), "nhood_2010")
@@ -140,10 +146,16 @@ p +
   labs(title = "The fit of neighbourhood info on block data in Baltimore City",
        x = "Longitude",
        y = "Latitude") +
-  theme(legend.position = "none") 
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15),
+        title = element_text(size = 18),
+        legend.position = "none")
 
 ggsave(filename = file.path("..", "Plots", 
-                            "block_block.png"), width = 45, height = 45, units = "cm", dpi = 300)
+                            "block_block.png"), width = 45, height = 45, units = "cm")
 
 
 ##    The fit of Block info on Neighbourhood data in Baltimore City
@@ -163,10 +175,16 @@ p +
   labs(title = "Blocks in Baltimore City",
        x = "Longitude",
        y = "Latitude") +
-  theme(legend.position = "none") 
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15),
+        title = element_text(size = 18),
+        legend.position = "none")
 
 ggsave(filename = file.path("..", "Plots", 
-                            "block_n.png"),width = 45, height = 45, units = "cm", dpi = 300)
+                            "block_n.png"),width = 45, height = 45, units = "cm")
 
 p + 
   geom_point(data=data,aes(x = lon, y = lat, colour = as.factor(data$Neighborhood) ))  +
@@ -179,12 +197,17 @@ p +
   labs(title = "The fit of Block info on block data in Baltimore City",
        x = "Longitude",
        y = "Latitude") +
-  theme(legend.position = "none") 
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15),
+        title = element_text(size = 18),
+        legend.position = "none")
 
 ggsave(filename = file.path("..", "Plots", 
                             "block_b.png"), 
-       width = 45, height = 45, units = "cm",
-       dpi = 300)
+       width = 45, height = 45, units = "cm")
 
 # sapply(list.files(file.path("wip", "blk2010"), full.names = T), function(x)
 #   {
