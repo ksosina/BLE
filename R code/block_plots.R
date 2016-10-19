@@ -27,7 +27,13 @@ if (n == 0){
   
   
   p + geom_point(data=data,aes(x = lon, y = lat, colour = as.factor(data$Block)))+
-    theme(legend.position = "none") 
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 20),
+          legend.text = element_text(size = 15),
+          legend.title = element_text(size = 15),
+          strip.text = element_text(size = 15),
+          title = element_text(size = 18),
+          legend.position = "none")
   
   dat <- data.frame(Neighborhood = sort(unique(data$Neighborhood)),
                     lon = tapply(data$lon, data$Neighborhood, mean),
@@ -40,7 +46,13 @@ if (n == 0){
               aes(label = as.factor(dat1$Neighborhood)), 
               colour="Black",size=2,hjust="center", 
               vjust="center") +
-    theme(legend.position = "none") 
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 20),
+          legend.text = element_text(size = 15),
+          legend.title = element_text(size = 15),
+          strip.text = element_text(size = 15),
+          title = element_text(size = 18),
+          legend.position = "none")
   
   
   
@@ -74,7 +86,13 @@ if (n == 0){
     labs(title = "Neighbourhoods as defined by Blocks Using just Block level data",
          x = "Longitude",
          y = "Latitude") +
-    theme(legend.position = "none") 
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 20),
+          legend.text = element_text(size = 15),
+          legend.title = element_text(size = 15),
+          strip.text = element_text(size = 15),
+          title = element_text(size = 18),
+          legend.position = "none")
   
   ggsave(filename = file.path("..", "Plots", 
                               "n_block_block.png"), width = 45, height = 45, units = "cm")
@@ -95,7 +113,13 @@ if (n == 0){
     labs(title = "The fit of neighbourhood info on block data in Baltimore City",
          x = "Longitude",
          y = "Latitude") +
-    theme(legend.position = "none") 
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 20),
+          legend.text = element_text(size = 15),
+          legend.title = element_text(size = 15),
+          strip.text = element_text(size = 15),
+          title = element_text(size = 18),
+          legend.position = "none")
   
   ggsave(filename = file.path("..", "Plots", 
                               "block_block.png"), width = 45, height = 45, units = "cm")
@@ -118,7 +142,13 @@ if (n == 0){
     labs(title = "Blocks in Baltimore City",
          x = "Longitude",
          y = "Latitude") +
-    theme(legend.position = "none") 
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 20),
+          legend.text = element_text(size = 15),
+          legend.title = element_text(size = 15),
+          strip.text = element_text(size = 15),
+          title = element_text(size = 18),
+          legend.position = "none")
   
   ggsave(filename = file.path("..", "Plots", 
                               "block_n.png"),width = 45, height = 45, units = "cm")
@@ -134,7 +164,13 @@ if (n == 0){
     labs(title = "The fit of Block info on block data in Baltimore City",
          x = "Longitude",
          y = "Latitude") +
-    theme(legend.position = "none") 
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 20),
+          legend.text = element_text(size = 15),
+          legend.title = element_text(size = 15),
+          strip.text = element_text(size = 15),
+          title = element_text(size = 18),
+          legend.position = "none")
   
   ggsave(filename = file.path("..", "Plots", 
                               "block_b.png"), 
