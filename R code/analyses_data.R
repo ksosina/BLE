@@ -88,7 +88,7 @@ dat1[!is.na(dat1$Neighborhood),] <- data.frame(dat1[!is.na(dat1$Neighborhood),][
 
 #Step 1
 ### Check if Lng and Lat fall inside polygons from ESRI Shape file for Child and wellbeing (this has the outcome)
-dat.le <-  rgdal::readOGR(file.path("wip", "health"), "health")
+dat.le <-  rgdal::readOGR(file.path("wip", "health"), "health", verbose = F)
 csa <- as.character(dat.le$CSA2010)
 dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
 
@@ -260,7 +260,7 @@ dat1 <- subset(dat1, select = -Location)
 
 #Step 1
 ### Check if Lng and Lat fall inside polygons from ESRI Shape file for Child and wellbeing (this has the outcome)
-dat.le <-  rgdal::readOGR(file.path("wip", "blk2010"), "blk2010")
+dat.le <-  rgdal::readOGR(file.path("wip", "blk2010"), "blk2010", verbose = F)
 block <- as.character(dat.le$BLOCK)
 dat.le <- sp::spTransform(dat.le, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
 
