@@ -98,7 +98,7 @@ if (n == 0){
                               "n_block_block.png"), width = 45, height = 45, units = "cm")
   
   #Fit of neighbourhood info
-  gor <- readOGR(file.path("wip", "nhood"), "nhood_2010")
+  gor <- readOGR(file.path("wip", "nhood"), "nhood_2010", verbose = F)
   gor <- spTransform(gor, CRS("+proj=longlat +datum=WGS84"))
   gor <- tidy(gor)
   
@@ -126,7 +126,7 @@ if (n == 0){
   
   
   ##    The fit of Block info on Neighbourhood data in Baltimore City
-  gor <- readOGR(file.path("wip", "blk2010"), "blk2010")
+  gor <- readOGR(file.path("wip", "blk2010"), "blk2010", verbose = F)
   gor <- spTransform(gor, CRS("+proj=longlat +datum=WGS84"))
   gor <- tidy(gor)
   
@@ -161,7 +161,7 @@ if (n == 0){
     geom_polygon(data=gor, aes(x=long, y=lat, group=group), color="red", alpha=0) +
     # geom_map(map=gor, data=gor, aes(map_id=id, x=long, y=lat, group=group), color="red", alpha=0) +
     coord_quickmap() +
-    labs(title = "The fit of Block info on block data in Baltimore City",
+    labs(title = "The fit of Census blocks on street block data in Baltimore City",
          x = "Longitude",
          y = "Latitude") +
     theme(axis.text = element_text(size = 18),
