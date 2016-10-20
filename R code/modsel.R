@@ -111,6 +111,7 @@ cvFitLm4 <- cvLm(st4, cost = rtmspe,
                  folds = folds, trim = 0.1)
 
 print(cvSelect(st1 = cvFitLm1, st2 = cvFitLm2, st3 = cvFitLm3, st4 = cvFitLm4))
+summary(st4)
 
 save.image("analyses_data.RData")
 detach()
