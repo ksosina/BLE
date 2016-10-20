@@ -292,7 +292,7 @@ p <- p +
        y = "Latitude") +
   # theme(legend.position = "none") +
   scale_fill_gradient2(name = "Values", midpoint = 75, mid = "brown", low = "yellow", high = "red") +
-  facet_wrap(. ~ind, labeller = labeller(ind = type)) +
+  facet_grid(. ~ind, labeller = labeller(ind = type)) +
   theme(axis.text = element_text(size = 18),
         axis.title = element_text(size = 20),
         legend.text = element_text(size = 15),
