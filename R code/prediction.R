@@ -300,6 +300,8 @@ p <- p +
         strip.text = element_text(size = 15),
         title = element_text(size = 18))
 
+p <- p + theme(panel.margin = unit(0.5, "in"))
+p <- p + theme(aspect.ratio = 1)
 ggsave(filename = file.path("..", "Plots", 
                             "pred.png"), plot = p,
        width = 45, height = 45, units = "cm")
