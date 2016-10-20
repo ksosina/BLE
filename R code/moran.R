@@ -13,7 +13,7 @@ print(result)
 
 detach()
 unlink("corr.RData")
-source(file = file.path("..", "R code", "analyses_data.R"))
+# source(file = file.path("..", "R code", "analyses_data.R"))
 
 setwd(file.path(".."))
 
