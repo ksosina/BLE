@@ -35,7 +35,7 @@ km2d <- function(km){
 
 ## Contiguity Neighbors
 
-csa.shp <-  rgdal::readOGR(file.path("wip", "health"), "health") 
+csa.shp <-  rgdal::readOGR(file.path("wip", "health"), "health", verbose = F) 
 coord.shp <- coordinates(csa.shp)
 
 W_cont_el <- poly2nb(csa.shp, queen=T)
@@ -247,7 +247,7 @@ csa_block.pred[,c(1,2,6,4)] %>%
 #Plotting
 map <- ggmap::get_map(location = "Baltimore City", zoom = 12, maptype = "roadmap" )
 p <- ggmap::ggmap(map)
-gor <- rgdal::readOGR(file.path("wip", "census"), "census")
+gor <- rgdal::readOGR(file.path("wip", "census"), "census", verbose = F)
 gor <- sp::spTransform(gor, sp::CRS("+proj=longlat +datum=WGS84"))
 gor <- broom::tidy(gor)
 
@@ -287,12 +287,12 @@ p <- p +
   #           colour="Black",size=2,hjust="center", 
   #           vjust="center") +
   coord_quickmap() +
-  labs(title = "Predicted life expectancy compared to observed\n life expectancy per CSA in the training dataset using two different methods ",
+  labs(title = "Predicted life expectancy compared to observed\n life expectancy per CSA in the testing dataset using two different methods ",
        x = "Longitude",
        y = "Latitude") +
   # theme(legend.position = "none") +
   scale_fill_gradient2(name = "Values", midpoint = 75, mid = "brown", low = "yellow", high = "red") +
-  facet_grid(. ~ind, labeller = labeller(ind = type)) +
+  facet_wrap(. ~ind, labeller = labeller(ind = type)) +
   theme(axis.text = element_text(size = 18),
         axis.title = element_text(size = 20),
         legend.text = element_text(size = 15),
@@ -300,7 +300,9 @@ p <- p +
         strip.text = element_text(size = 15),
         title = element_text(size = 18))
 
-print(p)
+ggsave(filename = file.path("..", "Plots", 
+                            "pred.png"), plot = p,
+       width = 45, height = 45, units = "cm")
   
 
 # print(NROW(block_pred))
