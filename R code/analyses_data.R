@@ -602,7 +602,7 @@ block_data.anal <- data.frame(block_data.anal[,c(1,12:13)], block_data.anal[,c(3
 ##American Community Survey 
 
 library(acs)
-
+api.key.install(key = "74dc730cf3f4a5d715eadf2db90cd6ac80d8c8cc")
 #Block Group data
 
 ##Related CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
