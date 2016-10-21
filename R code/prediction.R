@@ -275,8 +275,8 @@ test$id <- rep(as.character(0:54), 3)
 gor %>% dplyr::inner_join(test, by = "id") -> gor
 
 type <- c(
-  block.le = "Aggregated CSA estimates life expectancy from leave one outs",
-  pred.csa = "Aggregated CSA estimates life expectancy from transfer method",
+  block.le = "Aggregated CSA estimates\n life expectancy from\n leave one outs",
+  pred.csa = "Aggregated CSA estimates\n life expectancy from\n transfer method",
   lifeexp = "Observed life expectancy"
 )
 
@@ -300,8 +300,8 @@ p <- p +
         strip.text = element_text(size = 15),
         title = element_text(size = 18))
 
-p <- p + theme(panel.margin = unit(0.5, "in"))
-p <- p + theme(aspect.ratio = 1)
+p <- p + theme(panel.margin = unit(0.2, "in"))
+p <- p +  coord_fixed(ratio= 16.4/6.5)
 ggsave(filename = file.path("..", "Plots", 
                             "pred.png"), plot = p,
        width = 45, height = 45, units = "cm")
