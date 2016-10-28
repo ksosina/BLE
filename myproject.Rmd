@@ -2,94 +2,101 @@
 title: "Baltimore Life Expectancy"
 author: "Kayode Sosina"
 date: "September 12, 2016"
-output: html_document
+output: 
+  pdf_document: 
+    fig_caption: yes
+    highlight: haddock
+    number_sections: yes
+    toc: yes
 references:
-- id: mantel
-  title: "The Mantel Test versus Pearson's Correlation Analysis: Assessment of the Differences for Biological and Environmental Studies"
+- URL: http://www.jstor.org/stable/1400528
   author:
   - family: Dutilleul
-    given: Pierre  
-  - family: Stockwell 
-    given: Jason 
+    given: Pierre
+  - family: Stockwell
+    given: Jason
   - family: Frigon
     given: Dominic
   - family: Legendre
     given: Pierre
-  container-title: "Journal of Agricultural, Biological, and Environmental Statistics"
-  volume: 5
-  URL: 'http://www.jstor.org/stable/1400528'
-  publisher: "International Biometric Society"
-  page: 131-150
-  type: article-journal
+  container-title: Journal of Agricultural, Biological, and Environmental Statistics
+  id: mantel
   issued:
-    year: 2000
     month: 6
-- id: moran
-  title: "Notes on Continuous Stochastic Phenomena"
+    year: 2000
+  page: 131-150
+  publisher: International Biometric Society
+  title: 'The Mantel Test versus Pearson''s Correlation Analysis: Assessment of the
+    Differences for Biological and Environmental Studies'
+  type: article-journal
+  volume: 5
+- URL: http://www.jstor.org/stable/2332142
   author:
   - family: Moran
-    given: "Patrick Alfred Pierce"
-  container-title: "Biometrika"
-  volume: 37
-  URL: 'http://www.jstor.org/stable/2332142'
-  publisher: " Oxford University Press on behalf of Biometrika Trust"
-  page: 17-23
-  type: article-journal
+    given: Patrick Alfred Pierce
+  container-title: Biometrika
+  id: moran
   issued:
-    year: 1950
     month: 6
-- id: mantel1
-  title: "The Detection of Disease Clustering and a Generalized Regression Approach"
-  author:
-  - family: Mantel
-    given: "Nathan"
-  container-title: "American Association for Cancer Research."
+    year: 1950
+  page: 17-23
+  publisher: ' Oxford University Press on behalf of Biometrika Trust'
+  title: Notes on Continuous Stochastic Phenomena
   type: article-journal
+  volume: 37
+- author:
+  - family: Mantel
+    given: Nathan
+  container-title: American Association for Cancer Research.
+  id: mantel1
   issued:
-    year: 1966
     month: 9
-- id: fother
-  title: "Geographically Weighted Regression: The Analysis of Spatially Varying Relationships"
-  author:
+    year: 1966
+  title: The Detection of Disease Clustering and a Generalized Regression Approach
+  type: article-journal
+- author:
   - family: Fotheringham
-    given: "A. Stewart"
+    given: A. Stewart
   - family: Brunsdon
-    given: "Chris"
+    given: Chris
   - family: Charlton
-    given: "Martin"
-  container-title: " Wiley"
-  type: Book
+    given: Martin
+  container-title: ' Wiley'
+  id: fother
   issued:
     year: 2002
-- id: who
-  title: "An overarching health indicator for the Post-2015 Development Agenda"
-  URL: 'http://www.who.int/healthinfo/indicators/hsi_indicators_SDG_TechnicalMeeting_December2015_BackgroundPaper.pdf'
-  type: Article
+  title: 'Geographically Weighted Regression: The Analysis of Spatially Varying Relationships'
+  type: Book
+- URL: http://www.who.int/healthinfo/indicators/hsi_indicators_SDG_TechnicalMeeting_December2015_BackgroundPaper.pdf
+  id: who
   issued:
     year: 2014
-- id: hdi
-  title: "An overarching health indicator for the Post-2015 Development Agenda"
-  URL: 'http://hdr.undp.org/en/content/human-development-index-hdi'
-- id: gwmodel
-  title: "GWmodel: An R Package for Exploring Spatial Heterogeneity Using Geographically Weighted Models"
+  title: An overarching health indicator for the Post-2015 Development Agenda
+  type: Article
+- URL: http://hdr.undp.org/en/content/human-development-index-hdi
+  id: hdi
+  title: An overarching health indicator for the Post-2015 Development Agenda
+- URL: http://dx.doi.org/10.18637/jss.v063.i17
   author:
   - family: Gollini
-    given: Isabella  
-  - family: Lu 
-    given: Binbin 
+    given: Isabella
+  - family: Lu
+    given: Binbin
   - family: Charlton
     given: Martin
   - family: Brunsdon
     given: Christopher
   - family: Harris
     given: Paul
-  container-title: "Journal of Statistical softwar"
-  volume: 63
-  URL: 'http://dx.doi.org/10.18637/jss.v063.i17'
-  type: article-journal
+  container-title: Journal of Statistical softwar
+  id: gwmodel
   issued:
-    year: 2015
     month: 2
+    year: 2015
+  title: 'GWmodel: An R Package for Exploring Spatial Heterogeneity Using Geographically
+    Weighted Models'
+  type: article-journal
+  volume: 63
 ---
 
 ```{r setup, include=FALSE}
@@ -133,7 +140,7 @@ match.package <- function(){
                         "animation") 
   new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
   if(length(new.packages) > 0) {
-    install.packages(new.packages)
+    install.packages(new.packages,repos = "http://cran.us.r-project.org")
     # stop(paste("Please install the following packages", paste0(new.packages,collapse = " ")))
     # print(paste("The following packages are missing", new.packages))
     # x <- readline("Would you like to install them now?[y/n] >")
@@ -1316,7 +1323,7 @@ if (n == 0){
 
 ![](./Plots/block_n.png) 
 
-Here the colored points are the street blocks, while the grids represents a census block. For more plots examining the fits click [here](./Plots/)
+Here the colored points are the street blocks-the colours vary by neighbourhood, while the grids represents a census block. For more plots examining the fits click [here](./Plots/) or go to the plots folder in your working directory.
 
 ```{r proof, echo=FALSE, message=FALSE,warning=FALSE, eval=FALSE}
 ##Need to install image magick else this won't work
@@ -1335,7 +1342,7 @@ if(!file.exists(file.path(".", "Plots", "random_block.png")))
 
 ```
 
-All of this indicate a good fit. I also used gis data from the [baltimore city website](http://gisdata.baltimorecity.gov/) and I found that each block was defined as a street block.An example of a cityblock pulled from dataset can be found [here](./Plots/)
+All of this indicate a good fit. I also used gis data from the [baltimore city website](http://gisdata.baltimorecity.gov/) and I found that each block was defined as a street block. An example of a cityblock pulled from dataset can be found [here](./Plots/random_block.pdf) or in the plots folder
 
 ##Analysis
 ###Checking for Spatial correlation
@@ -1547,7 +1554,8 @@ unlink("corr.RData")
 
 setwd(file.path(".."))
 ```
-Based on these results, we can reject the null hypothesis that there is zero spatial autocorrelation present in life expectancy at the 5\% level of significance. For more tests using data from 2011 to 2014 please check [here]((https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R)).
+Based on these results, we can reject the null hypothesis that there is zero spatial autocorrelation present in life expectancy at the 5\% level of significance.
+<!-- For more tests using data from 2011 to 2014 please check [here]((https://github.com/ksosina/BLE/blob/master/R%20code/check_sp_corr.R)). -->
 
 ###Regression Model for spatial data
 
