@@ -2,11 +2,13 @@
 title: "Baltimore Life Expectancy"
 author: "Kayode Sosina"
 date: "September 12, 2016"
-output: 
-  pdf_document: 
+output:
+  pdf_document:
     fig_caption: yes
     highlight: haddock
     number_sections: yes
+    toc: yes
+  html_document:
     toc: yes
 references:
 - URL: http://www.jstor.org/stable/1400528
@@ -137,7 +139,7 @@ match.package <- function(){
                         "animation", "ade4", "sp", "ape", "geosphere", "dplyr",
                         "plyr", "pryr", "tidyr", "gstat", "spdep", "spgwr",
                         "GWmodel", "ModelMap", "acs", "tigris", "gridExtra",
-                        "animation") 
+                        "animation", "devtools", "cvTools") 
   new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
   if(length(new.packages) > 0) {
     install.packages(new.packages,repos = "http://cran.us.r-project.org")
@@ -211,9 +213,16 @@ Sustainability_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS
 #####      CODEBOOK     #####
 BNIA_Vital_Signs_Codebook <- "https://data.baltimorecity.gov/api/views/ryvy-9zw6/rows.csv?accessType=DOWNLOAD"
 if(!file.exists(file.path("..", "Text","codebook.csv"))){
-  download(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),
-           # method = "curl",
-           mode="wb")
+  switch(Sys.info()[['sysname']],
+         Windows= {download(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),
+                            # method = "wget",
+                            mode="wb")},
+         Linux  = {download.file(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),
+                                 method = "wget",
+                                 mode="wb")},
+         Darwin = {download.file(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),
+                                 method = "wget",
+                                 mode="wb")})
 }
 
 
@@ -236,9 +245,19 @@ mapply(function(x,y) {
     dir.create("raw_data")
   }
   if(!file.exists(file.path(".", "raw_data",y))){
-    download(url = x, destfile = file.path(".", "raw_data",y),
-           # method = "curl",
-           mode="wb")
+    
+    switch(Sys.info()[['sysname']],
+           Windows= {download(url = x, destfile = file.path(".", "raw_data",y),
+                                   # method = "wget",
+                                   mode="wb")},
+           Linux  = {download.file(url = x, destfile = file.path(".", "raw_data",y),
+                                   method = "wget",
+                                   mode="wb")},
+           Darwin = {download.file(url = x, destfile = file.path(".", "raw_data",y),
+                                   method = "wget",
+                                   mode="wb")})
+    
+    
     date_downloaded <- now()
     write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
   }
@@ -262,13 +281,20 @@ mapply(function(x,y) {
   }
   v <- list.files(file.path(".", "raw_data"), pattern = "*.csv")
   lv <- length(v)
-  if(!file.exists(file.path(".", "raw_data",y)) & lv < 15){
-    download(url = x, destfile = file.path(".", "raw_data",y),
-           # method = "curl",
-           mode="wb")
+  if(!file.exists(file.path("raw_data",y)) & lv < 15){
+    switch(Sys.info()[['sysname']],
+           Windows= {download(url = x, destfile = file.path(".", "raw_data",y),
+                  # method = "wget",
+                  mode="wb")},
+           Linux  = {download.file(url = x, destfile = file.path(".", "raw_data",y),
+                  method = "wget",
+                  mode="wb")},
+           Darwin = {download.file(url = x, destfile = file.path(".", "raw_data",y),
+                  method = "wget",
+                  mode="wb")})
     date_downloaded <- now()
     write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
-    if(file.info(file.path(".", "raw_data",y))$size*1e-6 > 30 )
+    if(file.info(file.path("raw_data",y))$size*1e-6 > 30 )
       system(paste("gzip", file.path(".", "raw_data",y)))
   }
 },data_urls,data_names)
@@ -306,12 +332,19 @@ mapply(function(x,y) {
   if(!file.exists("raw_data")){
     dir.create("raw_data")
   }
-  if(!file.exists(file.path(".", "raw_data",y))){
-    download(url = x, destfile = file.path(".", "raw_data",y),
-           # method = "curl",
-           mode="wb")
+  if(!file.exists(file.path("raw_data",y))){
+    switch(Sys.info()[['sysname']],
+           Windows= {download(url = x, destfile = file.path(".", "raw_data",y),
+                  # method = "wget",
+                  mode="wb")},
+           Linux  = {download.file(url = x, destfile = file.path(".", "raw_data",y),
+                  method = "wget",
+                  mode="wb")},
+           Darwin = {download.file(url = x, destfile = file.path(".", "raw_data",y),
+                  method = "wget",
+                  mode="wb")})
     date_downloaded <- now()
-    write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
+    write.table(date_downloaded, file.path("raw_data", "date_downloaded.txt"))
   }
 },data_urls,data_names)
 
@@ -453,26 +486,28 @@ census10.12  %>% dplyr::arrange_(.dots=names(census10.12)[1:20]) %>%
 
 #Check which varaibles are the same across the datasets
 census10 %>% arrange_(.dots=names(census10)[1:20]) %>%
-  select_(.dots = names(census10)[2:20]) %>% 
+  select_(.dots = names(census10)[2:20]) %>%
   as.data.frame() %>% apply(2, summary) -> c1
-census10.12 %>% 
-  select_(.dots = names(census10.12)[2:20]) %>% 
+census10.12 %>%
+  select_(.dots = names(census10.12)[2:20]) %>%
   as.data.frame() %>% apply(2, summary) -> c2
-census10.13 %>% 
-  select_(.dots = names(census10.13)[2:20]) %>% 
+census10.13 %>%
+  select_(.dots = names(census10.13)[2:20]) %>%
   mutate_each(funs(as.numeric)) %>% apply(2, summary)  -> c3
 census10.14 %>% arrange_(.dots=names(census10.14)[1:20]) %>%
   select_(.dots = names(census10.14)[2:20][-16]) %>% apply(2, summary) -> c4
 
 #IDs which variables are the same, note that I excluded hhs10 from both c2,and c3 since it is NA in c4
-identical(c1,c2);identical(c2,c3);identical(c2[,-16],c4);identical(c3[,-16],c4)
+# identical(c1,c2);identical(c2,c3);identical(c2[,-16],c4);identical(c3[,-16],c4)
 
-sapply(1:19, function(x){
-  identical(c1[,x],c2[,x])
-})
+# sapply(1:19, function(x){
+#   identical(c1[,x],c2[,x])
+# })
 
 
 #So we can join c2(census10.12) and c3(census10.13) on the first 20 variables c.f  names(census10.12)[names(census10.12) %in% names(census10.13)]
+
+census10.13$racdiv10 <- as.numeric(census10.12$racdiv10)
 
 census12_14 <- inner_join(census10.12,census10.13) %>% 
   inner_join(census10.14, by = names(census10.14)[2:20][-16]) %>% #join on 19 variables after we exclude hhs10
@@ -1020,123 +1055,149 @@ block_data.anal <- data.frame(block_data.anal[,c(1,12:13)], block_data.anal[,c(3
 
 ##American Community Survey 
 
-library(acs)
-api.key.install(key = "74dc730cf3f4a5d715eadf2db90cd6ac80d8c8cc")
-#Block Group data
+switch(Sys.info()[['sysname']],
+       Windows= {
+         library(acs);library(dplyr)
+         api.key.install(key = "74dc730cf3f4a5d715eadf2db90cd6ac80d8c8cc")
+         my.geo <- geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*",check = T)
+         #Block Group data
+         
+         ##Related CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
+         
+         cdbk <- acs.lookup(2014, 5, table.number="B11004")
+         hh <- acs.fetch(2014, span  = 5, 
+                         geography=my.geo, 
+                         table.number = "B11004", case.sensitive = F)
+         hh <- data.frame(hh@geography[,4:5],hh@estimate, row.names = 1:dim(hh@estimate)[1])
+         
+         hh %>%
+           dplyr::mutate(propfemhh = B11004_015/B11004_001) %>% 
+           dplyr::select(tract, blockgroup, propfemhh) -> hh
+         
+         #OWN CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
+         child.code <- acs.lookup(2014, 5, table.number="B09002")
+         child.ft <- acs.fetch(2014, span  = 5, 
+                               geography=my.geo, 
+                               table.number = "B09002", case.sensitive = F)
+         child.ft <- data.frame(child.ft@geography[,4:5],child.ft@estimate, row.names = 1:dim(child.ft@estimate)[1])
+         
+         
+         
+         #POVERTY STATUS IN THE PAST 12 MONTHS BY DISABILITY STATUS BY EMPLOYMENT STATUS FOR THE POPULATION 20 TO 64 YEARS (get prop below pov line)
+         poverty.code <- acs.lookup(2014, 5, table.number="B23024")
+         pov.ft <- acs.fetch(2014, span  = 5, 
+                             geography=geo.make(state=24, county = 510, tract ="*", block.group ="*",check = T), 
+                             table.number = "B23024", case.sensitive = F)
+         pov.ft <- data.frame(pov.ft@geography[,4:5],pov.ft@estimate, row.names = 1:dim(pov.ft@estimate)[1])
+         
+         pov.ft %>%
+           dplyr::mutate(propbelow = B23024_002/B23024_001) %>% 
+           dplyr::select(tract, blockgroup, propbelow) -> pov.ft
+         
+         
+         #MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2014 INFLATION-ADJUSTED DOLLARS)
+         medinc.code <- acs.lookup(2014, 5, table.number="B19013")
+         medinc.ft <- acs.fetch(2014, span  = 5, 
+                                geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                                table.number = "B19013", case.sensitive = F)
+         medinc.ft <- data.frame(medinc.ft@geography[,4:5],medinc.ft@estimate, row.names = 1:dim(medinc.ft@estimate)[1])
+         
+         
+         #TYPES OF HEALTH INSURANCE COVERAGE BY AGE
+         insur.code <- acs.lookup(2014, 5, table.number="B27010")
+         insur.ft <- acs.fetch(2014, span  = 5, 
+                               geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                               table.number = "B27010", case.sensitive = F)
+         insur.ft <- data.frame(insur.ft@geography[,4:5],insur.ft@estimate, row.names = 1:dim(insur.ft@estimate)[1])
+         
+         insur.ft %>%
+           dplyr::mutate(propkids_withinsurance = 1- (B27010_017/B27010_002)) %>% 
+           dplyr::select(tract, blockgroup, propkids_withinsurance) %>% 
+           dplyr::mutate(propkids_withinsurance = ifelse(is.nan(propkids_withinsurance),1, propkids_withinsurance)) -> insur.ft
+         
+         #RACE "to calculate racial diversity"
+         
+         # Working with percents expressed as ratios (e.g., 63 percent = 0.63), the index is calculated in three steps:  A. Square the percent for each
+         # group, B. Sum the squares, and C. Subtract the sum from 1.00. Eight groups were used for the index: 1. White, not Hispanic;
+         # 2. Black or African American; 3. American Indian and Alaska Native (AIAN); 4. Asian; 5. Native Hawaiian and Other Pacific
+         # Islander (NHOPI); 6. Two or more races, not Hispanic; 7. Some other race, not Hispanic; and 8. Hispanic or Latino
+         
+         race.code <- acs.lookup(2014, 5, table.number="B02001")
+         race.ft <- acs.fetch(2014, span  = 5, 
+                              geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
+                              table.number = "B02001", case.sensitive = F)
+         race.ft <- data.frame(race.ft@geography[,4:5],race.ft@estimate, row.names = 1:dim(race.ft@estimate)[1])
+         
+         race.ft %>%
+           dplyr::mutate(B02001_002 = B02001_002/B02001_001, B02001_003 = B02001_003/B02001_001, B02001_004 = B02001_004/B02001_001,
+                         B02001_005 = B02001_005/B02001_001, B02001_006 = B02001_006/B02001_001, B02001_007 = B02001_007/B02001_001,
+                         B02001_010 = B02001_010/B02001_001, 
+                         racdiv = 1-(B02001_002^2 + B02001_003^2 + B02001_004^2 + B02001_005^2 + B02001_006^2 + B02001_007^2 + B02001_010^2)) %>% 
+           dplyr::select(tract, blockgroup, racdiv) -> race.ft
+         
+         library(tigris)
+         bmore.city <- block_groups("MD", "Baltimore city")
+         
+         # BG <- as.character(dat.le$CSA2010)
+         bmore.city_sp <- sp::spTransform(bmore.city, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
+         
+         bmore.city <- bmore.city_sp
+         
+         
+         rm(bmore.city_sp)
+         # Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
+         sp::proj4string(real_prop) <- sp::proj4string(bmore.city)
+         
+         sp::over(bmore.city, real_prop, returnList = T) -> BG_neighbhd_csa 
+         
+         BG_neighbhd_csa <- plyr::ldply(BG_neighbhd_csa, data.frame)
+         
+         as.data.frame(real_prop) %>%
+           dplyr::group_by(Neighborhood, Block) %>%
+           dplyr::summarise(lon = median(lon), lat = median(lat)) -> areal.prop
+         
+         BG_neighbhd_csa %>%
+           dplyr::inner_join(dplyr::mutate(bmore.city@data, .id = row.names(bmore.city@data))) %>%
+           dplyr::select(.id, Neighborhood, Block, tract = TRACTCE, blockgroup = BLKGRPCE) %>%
+           dplyr::mutate(tract = as.numeric(tract)) %>%
+           dplyr::left_join(na.omit(hh)) %>% 
+           dplyr::left_join(na.omit(pov.ft)) %>%
+           dplyr::left_join(na.omit(medinc.ft)) %>%
+           dplyr::left_join(na.omit(insur.ft)) %>% 
+           dplyr::left_join(na.omit(race.ft)) %>%
+           dplyr::inner_join(areal.prop) %>%
+           unique() %>% na.omit() -> bg_smooth
+         
+         bg_smooth -> BG_neighbhd_csa
+         
+         bg_smooth %>%
+           dplyr::group_by(tract, blockgroup) %>%
+           dplyr::summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
+                            B19013_001 = mean(B19013_001), propkids_withinsurance = mean(propkids_withinsurance), 
+                            racdiv = mean(racdiv),lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
+         saveRDS(bg_smooth,"bg_smooth.rds")
+         saveRDS(BG_neighbhd_csa, "BG_neighbhd_csa.rds")},
+       
+       Linux  = {link <- "https://github.com/ksosina/BLE/raw/master/Data/BG_neighbhd_csa.rds"
+       download.file(link, "BG_neighbhd_csa.rds", 
+                     method = "wget", mode = "wb")
+       BG_neighbhd_csa<- readRDS("BG_neighbhd_csa.rds")
+       
+       link <- "https://github.com/ksosina/BLE/raw/master/Data/bg_smooth.rds"
+       download.file(link, "bg_smooth.rds", 
+                     method = "wget", mode = "wb")
+       bg_smooth<- readRDS("bg_smooth.rds")},
+       
+       Darwin = {link <- "https://github.com/ksosina/BLE/raw/master/Data/BG_neighbhd_csa.rds"
+       download.file(link, "BG_neighbhd_csa.rds", 
+                     method = "wget", mode = "wb")
+       BG_neighbhd_csa<- readRDS("BG_neighbhd_csa.rds")
+       
+       link <- "https://github.com/ksosina/BLE/raw/master/Data/bg_smooth.rds"
+       download.file(link, "bg_smooth.rds", 
+                     method = "wget", mode = "wb")
+       bg_smooth<- readRDS("bg_smooth.rds")})
 
-##Related CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
-
-cdbk <- acs.lookup(2014, 5, table.number="B11004")
-hh <- acs.fetch(2014, span  = 5, 
-                geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                table.number = "B11004", case.sensitive = F)
-hh <- data.frame(hh@geography[,4:5],hh@estimate, row.names = 1:dim(hh@estimate)[1])
-
-hh %>%
-  dplyr::mutate(propfemhh = B11004_015/B11004_001) %>% 
-  dplyr::select(tract, blockgroup, propfemhh) -> hh
-
-#OWN CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE (get prop fem headed with kid <18)
-child.code <- acs.lookup(2014, 5, table.number="B09002")
-child.ft <- acs.fetch(2014, span  = 5, 
-                      geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                      table.number = "B09002", case.sensitive = F)
-child.ft <- data.frame(child.ft@geography[,4:5],child.ft@estimate, row.names = 1:dim(child.ft@estimate)[1])
-
-
-
-#POVERTY STATUS IN THE PAST 12 MONTHS BY DISABILITY STATUS BY EMPLOYMENT STATUS FOR THE POPULATION 20 TO 64 YEARS (get prop below pov line)
-poverty.code <- acs.lookup(2014, 5, table.number="B23024")
-pov.ft <- acs.fetch(2014, span  = 5, 
-                    geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                    table.number = "B23024", case.sensitive = F)
-pov.ft <- data.frame(pov.ft@geography[,4:5],pov.ft@estimate, row.names = 1:dim(pov.ft@estimate)[1])
-
-pov.ft %>%
-  dplyr::mutate(propbelow = B23024_002/B23024_001) %>% 
-  dplyr::select(tract, blockgroup, propbelow) -> pov.ft
-
-
-#MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2014 INFLATION-ADJUSTED DOLLARS)
-medinc.code <- acs.lookup(2014, 5, table.number="B19013")
-medinc.ft <- acs.fetch(2014, span  = 5, 
-                       geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                       table.number = "B19013", case.sensitive = F)
-medinc.ft <- data.frame(medinc.ft@geography[,4:5],medinc.ft@estimate, row.names = 1:dim(medinc.ft@estimate)[1])
-
-
-#TYPES OF HEALTH INSURANCE COVERAGE BY AGE
-insur.code <- acs.lookup(2014, 5, table.number="B27010")
-insur.ft <- acs.fetch(2014, span  = 5, 
-                      geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                      table.number = "B27010", case.sensitive = F)
-insur.ft <- data.frame(insur.ft@geography[,4:5],insur.ft@estimate, row.names = 1:dim(insur.ft@estimate)[1])
-
-insur.ft %>%
-  dplyr::mutate(propkids_withinsurance = 1- (B27010_017/B27010_002)) %>% 
-  dplyr::select(tract, blockgroup, propkids_withinsurance) %>% 
-  dplyr::mutate(propkids_withinsurance = ifelse(is.nan(propkids_withinsurance),1, propkids_withinsurance)) -> insur.ft
-
-#RACE "to calculate racial diversity"
-
-# Working with percents expressed as ratios (e.g., 63 percent = 0.63), the index is calculated in three steps:  A. Square the percent for each
-# group, B. Sum the squares, and C. Subtract the sum from 1.00. Eight groups were used for the index: 1. White, not Hispanic;
-# 2. Black or African American; 3. American Indian and Alaska Native (AIAN); 4. Asian; 5. Native Hawaiian and Other Pacific
-# Islander (NHOPI); 6. Two or more races, not Hispanic; 7. Some other race, not Hispanic; and 8. Hispanic or Latino
-
-race.code <- acs.lookup(2014, 5, table.number="B02001")
-race.ft <- acs.fetch(2014, span  = 5, 
-                     geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
-                     table.number = "B02001", case.sensitive = F)
-race.ft <- data.frame(race.ft@geography[,4:5],race.ft@estimate, row.names = 1:dim(race.ft@estimate)[1])
-
-race.ft %>%
-  dplyr::mutate(B02001_002 = B02001_002/B02001_001, B02001_003 = B02001_003/B02001_001, B02001_004 = B02001_004/B02001_001,
-                B02001_005 = B02001_005/B02001_001, B02001_006 = B02001_006/B02001_001, B02001_007 = B02001_007/B02001_001,
-                B02001_010 = B02001_010/B02001_001, 
-                racdiv = 1-(B02001_002^2 + B02001_003^2 + B02001_004^2 + B02001_005^2 + B02001_006^2 + B02001_007^2 + B02001_010^2)) %>% 
-  dplyr::select(tract, blockgroup, racdiv) -> race.ft
-
-library(tigris)
-bmore.city <- block_groups("MD", "Baltimore city")
-
-# BG <- as.character(dat.le$CSA2010)
-bmore.city_sp <- sp::spTransform(bmore.city, sp::CRS("+proj=longlat +datum=WGS84")) #SpatialPolygonsDataFrame
-
-bmore.city <- bmore.city_sp
-
-
-rm(bmore.city_sp)
-# Set the projection of the SpatialPointsDataFrame using the projection of the shapefile
-sp::proj4string(real_prop) <- sp::proj4string(bmore.city)
-
-sp::over(bmore.city, real_prop, returnList = T) -> BG_neighbhd_csa 
-
-BG_neighbhd_csa <- plyr::ldply(BG_neighbhd_csa, data.frame)
-
-as.data.frame(real_prop) %>%
-  dplyr::group_by(Neighborhood, Block) %>%
-  dplyr::summarise(lon = median(lon), lat = median(lat)) -> areal.prop
-
-BG_neighbhd_csa %>%
-  dplyr::inner_join(dplyr::mutate(bmore.city@data, .id = row.names(bmore.city@data))) %>%
-  dplyr::select(.id, Neighborhood, Block, tract = TRACTCE, blockgroup = BLKGRPCE) %>%
-  dplyr::mutate(tract = as.numeric(tract)) %>%
-  dplyr::left_join(na.omit(hh)) %>% 
-  dplyr::left_join(na.omit(pov.ft)) %>%
-  dplyr::left_join(na.omit(medinc.ft)) %>%
-  dplyr::left_join(na.omit(insur.ft)) %>% 
-  dplyr::left_join(na.omit(race.ft)) %>%
-  dplyr::inner_join(areal.prop) %>%
-  unique() %>% na.omit() -> bg_smooth
-
-bg_smooth -> BG_neighbhd_csa
-
-bg_smooth %>%
-  dplyr::group_by(tract, blockgroup) %>%
-  dplyr::summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
-                   B19013_001 = mean(B19013_001), propkids_withinsurance = mean(propkids_withinsurance), 
-                   racdiv = mean(racdiv),lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
 rm(areal.prop)
 
 
@@ -1195,7 +1256,7 @@ rm(krig.output, krig, fit.variog, model.variog, semivariog, grd, bg_smooth)
 
 detach("package:dplyr", unload=TRUE)
 detach("package:lubridate", unload=TRUE)
-detach("package:acs", unload=TRUE)
+# detach("package:acs", unload=TRUE)
 
 save.image("analyses_data.RData")
 setwd(file.path(".."))
@@ -1298,32 +1359,32 @@ if (n == 0){
   ggsave(filename = file.path("..", "Plots", 
                               "block_n.png"),width = 45, height = 45, units = "cm")
   
-  p + 
-    geom_point(data=data,aes(x = lon, y = lat, colour = "blue" ))  +
-    # geom_text(data = dat1, aes(label = as.factor(dat1$Neighborhood)), 
-    #           colour="Black",size=2,hjust="center", 
-    #           vjust="center") +
-    geom_polygon(data=gor, aes(x=long, y=lat, group=group), color="black", alpha=0) +
-    # geom_map(map=gor, data=gor, aes(map_id=id, x=long, y=lat, group=group), color="red", alpha=0) +
-    coord_quickmap() +
-    labs(title = "The fit of Census blocks on street block data in Baltimore City",
-         x = "Longitude",
-         y = "Latitude") +
-    theme(axis.text = element_text(size = 18),
-          axis.title = element_text(size = 20),
-          legend.text = element_text(size = 15),
-          legend.title = element_text(size = 15),
-          strip.text = element_text(size = 15),
-          title = element_text(size = 18),
-          legend.position = "none",
-          panel.background = element_blank(),
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(),
-          axis.line = element_line(colour = "black"))
-  
-  ggsave(filename = file.path(".", "Plots", 
-                              "block_b.png"), 
-         width = 45, height = 45, units = "cm")
+  # p + 
+  #   geom_point(data=data,aes(x = lon, y = lat, colour = "blue" ))  +
+  #   # geom_text(data = dat1, aes(label = as.factor(dat1$Neighborhood)), 
+  #   #           colour="Black",size=2,hjust="center", 
+  #   #           vjust="center") +
+  #   geom_polygon(data=gor, aes(x=long, y=lat, group=group), color="black", alpha=0) +
+  #   # geom_map(map=gor, data=gor, aes(map_id=id, x=long, y=lat, group=group), color="red", alpha=0) +
+  #   coord_quickmap() +
+  #   labs(title = "The fit of Census blocks on street block data in Baltimore City",
+  #        x = "Longitude",
+  #        y = "Latitude") +
+  #   theme(axis.text = element_text(size = 18),
+  #         axis.title = element_text(size = 20),
+  #         legend.text = element_text(size = 15),
+  #         legend.title = element_text(size = 15),
+  #         strip.text = element_text(size = 15),
+  #         title = element_text(size = 18),
+  #         legend.position = "none",
+  #         panel.background = element_blank(),
+  #         panel.grid.major = element_blank(), 
+  #         panel.grid.minor = element_blank(),
+  #         axis.line = element_line(colour = "black"))
+  # 
+  # ggsave(filename = file.path(".", "Plots", 
+  #                             "block_b.png"), 
+  #        width = 45, height = 45, units = "cm")
   
   
   # unlink(file.path("wip", "blk2010"), force = T, recursive = T)
@@ -1343,7 +1404,7 @@ real.prop <- read_csv(file.path(".","Data","raw_data", "real_property.csv.gz"))
 random_block <- sample(real.prop$BLOCKPLAT,1)
 if(!file.exists(file.path(".", "Plots", "random_block.pdf")))
 {
-  download(random_block, destfile = file.path(".", "Plots", "random_block.pdf"),
+  download.file(random_block, destfile = file.path(".", "Plots", "random_block.pdf"),
            # method = "curl",
            mode="wb")
 }
@@ -1643,7 +1704,17 @@ my_data %>%
   inner_join(csa.data.anal[,-c(4:6, 27:28)])-> my_csa
 
 #Center and scale all the predictors
+my_csa$birthwt <- as.numeric(gsub("%", "", my_csa$birthwt))
+my_csa$cashsa <- as.numeric(gsub("%", "", my_csa$cashsa))
+my_csa$fore <- as.numeric(gsub("%", "", my_csa$fore))
 
+switch(Sys.info()[['sysname']],
+       Linux  = {my_csa$birthwt <- as.numeric(gsub("%", "", my_csa$birthwt))
+       my_csa$cashsa <- as.numeric(gsub("%", "", my_csa$cashsa))
+       my_csa$fore <- as.numeric(gsub("%", "", my_csa$fore))},
+       Darwin = {my_csa$birthwt <- as.numeric(gsub("%", "", my_csa$birthwt))
+       my_csa$cashsa <- as.numeric(gsub("%", "", my_csa$cashsa))
+       my_csa$fore <- as.numeric(gsub("%", "", my_csa$fore))})
 my_csa <- data.frame(my_csa[,c(1,9)],apply(my_csa[,-c(1, 9,5:6)], 2, scale), my_csa[,5:6])
 
 rm(my_data)
