@@ -2,16 +2,6 @@
 title: "Baltimore Life Expectancy"
 author: "Kayode Sosina"
 date: "September 12, 2016"
-output:
-  html_document:
-    toc: yes
-  pdf_document:
-    fig_caption: yes
-    highlight: haddock
-    number_sections: yes
-    toc: yes
-  html_document:
-    toc: yes
 references:
 - URL: http://www.jstor.org/stable/1400528
   author:
@@ -1200,7 +1190,7 @@ switch(Sys.info()[['sysname']],
                      method = "wget", mode = "wb")
        bg_smooth<- readRDS("bg_smooth.rds")})
 
-<<<<<<< HEAD
+
 race.code <- acs.lookup(2014, 5, table.number="B02001")
 race.ft <- acs.fetch(2014, span  = 5, 
                      geography=geo.make(state="MD", county = "Baltimore city", tract ="*", block.group ="*"), 
