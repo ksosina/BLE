@@ -2,8 +2,10 @@
 title: "Baltimore Life Expectancy"
 author: "Kayode Sosina"
 date: "September 12, 2016"
-output: 
-  pdf_document: 
+output:
+  html_document:
+    toc: yes
+  pdf_document:
     fig_caption: yes
     highlight: haddock
     number_sections: yes
@@ -1137,11 +1139,16 @@ bg_smooth %>%
   dplyr::summarise(propfemhh = mean(propfemhh), propbelow = mean(propbelow), 
                    B19013_001 = mean(B19013_001), propkids_withinsurance = mean(propkids_withinsurance), 
                    racdiv = mean(racdiv),lon = median(lon), lat = median(lat)) %>% data.frame -> bg_smooth
+saveRDS(BG_neighbhd_csa, file =  "BG_neighbhd_csa.rds")
+saveRDS(bg_smooth, file = "bg_smooth.rds")
 rm(areal.prop)
 
 
 
 # Kriging the Block group predictors
+
+# BG_neighbhd_csa <- readRDS("BG_neighbhd_csa.rds")
+# bg_smooth <- readRDS("bg_smooth.rds")
 
 #proportion below Poverty
 sp::coordinates(bg_smooth) <- ~lon + lat
