@@ -211,7 +211,9 @@ Sustainability_2010_to_2014 <- "http://bniajfi.org/wp-content/uploads/2016/04/VS
 #####      CODEBOOK     #####
 BNIA_Vital_Signs_Codebook <- "https://data.baltimorecity.gov/api/views/ryvy-9zw6/rows.csv?accessType=DOWNLOAD"
 if(!file.exists(file.path("..", "Text","codebook.csv"))){
-  download(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),mode="wb")
+  download(url = BNIA_Vital_Signs_Codebook, destfile = file.path("..", "Text","codebook.csv"),
+           # method = "curl",
+           mode="wb")
 }
 
 
@@ -234,7 +236,9 @@ mapply(function(x,y) {
     dir.create("raw_data")
   }
   if(!file.exists(file.path(".", "raw_data",y))){
-    download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
+    download(url = x, destfile = file.path(".", "raw_data",y),
+           # method = "curl",
+           mode="wb")
     date_downloaded <- now()
     write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
   }
@@ -259,7 +263,9 @@ mapply(function(x,y) {
   v <- list.files(file.path(".", "raw_data"), pattern = "*.csv")
   lv <- length(v)
   if(!file.exists(file.path(".", "raw_data",y)) & lv < 15){
-    download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
+    download(url = x, destfile = file.path(".", "raw_data",y),
+           # method = "curl",
+           mode="wb")
     date_downloaded <- now()
     write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
     if(file.info(file.path(".", "raw_data",y))$size*1e-6 > 30 )
@@ -301,7 +307,9 @@ mapply(function(x,y) {
     dir.create("raw_data")
   }
   if(!file.exists(file.path(".", "raw_data",y))){
-    download(url = x, destfile = file.path(".", "raw_data",y),mode="wb")
+    download(url = x, destfile = file.path(".", "raw_data",y),
+           # method = "curl",
+           mode="wb")
     date_downloaded <- now()
     write.table(date_downloaded, file.path(".", "raw_data", "date_downloaded.txt"))
   }
@@ -408,6 +416,10 @@ The rest of the variables used in the final model includes: Percentage of Studen
 
 
 ```{r analyses_data, echo = F, message=FALSE, warning=F}
+##########################
+## Warning: this takes a while to run
+##########################
+
 #Create all data files to be used during analysis
 setwd(file.path(".","Data"))
 
@@ -1331,7 +1343,9 @@ real.prop <- read_csv(file.path(".","Data","raw_data", "real_property.csv.gz"))
 random_block <- sample(real.prop$BLOCKPLAT,1)
 if(!file.exists(file.path(".", "Plots", "random_block.pdf")))
 {
-  download(random_block, destfile = file.path(".", "Plots", "random_block.pdf"), mode = "wb")
+  download(random_block, destfile = file.path(".", "Plots", "random_block.pdf"),
+           # method = "curl",
+           mode="wb")
 }
 # print(getwd())
 # file.show(file.path("..", "Plots", "random_block.pdf"))
@@ -1707,7 +1721,7 @@ setwd("..")
 Here, after we find the model that fits the data best, using aggregated data. 
 
     1. We predict what the life expectancy would be after we remove one of the blocks from the aggregated data, call this $$ T_{-b} = E(Y)_{-b} $$ 
-    2. Then we find the delta in predicted life expectancy at the CSA level due to the removed block as $$ T_{\delta_b} = T_{full} - T_{-b} $$ Call this delta the change in the mean life expectancy at the CSA level due to that block.
+    2. Then we find the delta in predicted life expectancy at the CSA level due to the removed block as $$ T_{\delta_b} = T_{full} – T_{-b} $$ Call this delta the change in the mean life expectancy at the CSA level due to that block.
     3. Add the delta to the observed life expectancy at that CSA. Call this the predicted life expectancy due to that block.
     
 Note that this inherently assumes that the observed life expectancy at a CSA is the true underlying life expectancy and that all the blocks in the neighborhoods that belong that CSA vary about it.
@@ -1925,7 +1939,9 @@ arrange(my_block_cv,csa,neighborhood,block)-> my_block_cv
 my_block_cv$pred <- NA
 my_block_cv$predvar <- NA
 
-
+##########################
+## Warning: this takes a while to run
+##########################
 
 for (i in 1:n){
   #Remove all values relating to block i along with the NA column for pred
